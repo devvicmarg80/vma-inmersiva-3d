@@ -3,3 +3,7 @@ node_modules/
 .env
 .env.local
 *.log
+
+# Multimedia pesado del scraping de mentorias (queda solo en el VPS, se sirve directo)
+mentorias-vma/**/*.mp3
+mentorias-vma/**/*.mp4
