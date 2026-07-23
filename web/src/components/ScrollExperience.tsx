@@ -124,7 +124,7 @@ export default function ScrollExperience() {
             onLoadedMetadata={() => setReady(true)}
             className="absolute inset-0 h-full w-full object-cover"
           >
-            <source src="/video/VMA_Master_Reel_v2.mp4" type="video/mp4" />
+            <source src="/video/VMA_Narrative.mp4" type="video/mp4" />
           </video>
           <div
             className="absolute inset-0"
