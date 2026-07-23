@@ -53,42 +53,57 @@ export default function ScrollExperience() {
 
   useEffect(() => {
     // Scrubbing needs the whole file locally: seeking ahead of what's
-    // downloaded stalls the video until the network catches up. Rather than
-    // let that happen mid-scroll, block scrolling with a loading screen
-    // until the file is fully buffered, so every seek after that is instant
-    // regardless of connection speed.
+    // downloaded stalls the video until the network catches up. Chrome's
+    // own buffering for a paused <video preload="auto"> stops well short of
+    // the full file regardless of that hint, so instead we fetch the file
+    // ourselves, track real progress, and hand the video a blob URL once
+    // it's 100% local — every seek after that is instant no matter the
+    // connection speed. Scrolling stays locked behind a loading screen
+    // until then.
     if (reducedMotion) return;
     const video = videoRef.current;
     if (!video) return;
 
     let cancelled = false;
+    let objectUrl: string | null = null;
+    const controller = new AbortController();
     const safetyTimeout = setTimeout(() => {
       if (!cancelled) setFullyBuffered(true);
-    }, 30000);
+    }, 45000);
 
-    const checkBuffered = () => {
-      const duration = video.duration;
-      if (!duration || !Number.isFinite(duration)) return;
-      const { buffered } = video;
-      const end = buffered.length ? buffered.end(buffered.length - 1) : 0;
-      const pct = clamp(end / duration, 0, 1);
-      setBufferPct(pct);
-      if (pct >= 0.995) {
+    (async () => {
+      try {
+        const res = await fetch("/video/VMA_Narrative.mp4", {
+          signal: controller.signal,
+        });
+        if (!res.body) throw new Error("no response body");
+        const total = Number(res.headers.get("content-length")) || 0;
+        const reader = res.body.getReader();
+        const chunks: BlobPart[] = [];
+        let received = 0;
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          received += value.byteLength;
+          if (total) setBufferPct(clamp(received / total, 0, 1));
+        }
+        if (cancelled) return;
+        const blob = new Blob(chunks, { type: "video/mp4" });
+        objectUrl = URL.createObjectURL(blob);
+        video.src = objectUrl;
+        setBufferPct(1);
         setFullyBuffered(true);
+      } catch {
+        if (!cancelled) setFullyBuffered(true); // fail open, degrade to normal streaming
       }
-    };
-
-    video.addEventListener("progress", checkBuffered);
-    video.addEventListener("loadedmetadata", checkBuffered);
-    video.addEventListener("canplaythrough", checkBuffered);
-    checkBuffered();
+    })();
 
     return () => {
       cancelled = true;
+      controller.abort();
       clearTimeout(safetyTimeout);
-      video.removeEventListener("progress", checkBuffered);
-      video.removeEventListener("loadedmetadata", checkBuffered);
-      video.removeEventListener("canplaythrough", checkBuffered);
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [reducedMotion]);
 
@@ -182,13 +197,11 @@ export default function ScrollExperience() {
             ref={videoRef}
             muted
             playsInline
-            preload="auto"
+            preload="none"
             poster={acts[0].poster}
             onLoadedMetadata={() => setReady(true)}
             className="absolute inset-0 h-full w-full object-cover"
-          >
-            <source src="/video/VMA_Narrative.mp4" type="video/mp4" />
-          </video>
+          />
           <div
             className="absolute inset-0"
             style={{
