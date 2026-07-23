@@ -1,3 +1,17 @@
 ._*
 .DS_Store
 node_modules/
+.next/
+.env
+.env.local
+*.log
+
+# Multimedia pesado del scraping de mentorias (queda solo en el VPS, se sirve directo)
+mentorias-vma/**/*.mp3
+mentorias-vma/**/*.mp4
+
+# Videos generados con IA para la landing 3D (pesan mucho, no van al repo;
+# se sirven aparte cuando el sitio se despliegue)
+Videos_Inmersivos3d/**/*.mp4
+Logo_remasterizado_2K/**/*.mp4
+web/public/video/**/*.mp4
