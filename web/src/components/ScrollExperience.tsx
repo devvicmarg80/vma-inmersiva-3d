@@ -42,6 +42,7 @@ export default function ScrollExperience() {
   const [ready, setReady] = useState(false);
   const [bufferPct, setBufferPct] = useState(0);
   const [fullyBuffered, setFullyBuffered] = useState(false);
+  const [showHint, setShowHint] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -131,6 +132,13 @@ export default function ScrollExperience() {
 
   useEffect(() => {
     if (reducedMotion) return;
+    // Invite the visitor to scroll once the experience is actually
+    // interactive, and dismiss the hint for good the moment they do.
+    if (fullyBuffered) setShowHint(true);
+  }, [reducedMotion, fullyBuffered]);
+
+  useEffect(() => {
+    if (reducedMotion) return;
 
     let raf = 0;
     let dirty = true;
@@ -153,6 +161,8 @@ export default function ScrollExperience() {
       const totalScrollable = track.offsetHeight - window.innerHeight;
       const top = track.getBoundingClientRect().top;
       const progress = clamp(-top / totalScrollable, 0, 1);
+
+      if (progress > 0.02) setShowHint(false);
 
       // Skip the seek while a previous one is still resolving so seeks
       // never queue up behind fast scrolling; `dirty` stays true so this
@@ -178,6 +188,16 @@ export default function ScrollExperience() {
     };
   }, [reducedMotion]);
 
+  useEffect(() => {
+    if (!reducedMotion) return;
+    setShowHint(true);
+    const onScroll = () => {
+      if (window.scrollY > 24) setShowHint(false);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [reducedMotion]);
+
   if (reducedMotion) {
     return (
       <main>
@@ -196,6 +216,7 @@ export default function ScrollExperience() {
           </section>
         ))}
         <ClosingFooter />
+        <ScrollHint visible={showHint} />
       </main>
     );
   }
@@ -261,7 +282,24 @@ export default function ScrollExperience() {
         </div>
       </div>
       <ClosingFooter />
+      <ScrollHint visible={showHint} />
     </main>
+  );
+}
+
+function ScrollHint({ visible }: { visible: boolean }) {
+  return (
+    <div
+      className="pointer-events-none fixed inset-x-0 bottom-6 z-30 flex flex-col items-center gap-2 transition-opacity duration-700 sm:bottom-8"
+      style={{ opacity: visible ? 1 : 0 }}
+    >
+      <div className="flex h-9 w-6 items-start justify-center rounded-full border-2 border-white/50 p-1">
+        <div className="h-1.5 w-1.5 rounded-full bg-white/80 animate-scroll-hint-dot" />
+      </div>
+      <p className="text-[10px] uppercase tracking-[0.14em] text-white/60">
+        Desplázate para explorar
+      </p>
+    </div>
   );
 }
 
@@ -289,9 +327,12 @@ function ActContent({ act }: { act: (typeof acts)[number] }) {
       )}
 
       {act.stats && (
-        <dl className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 max-w-2xl mx-auto">
+        <dl className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6 max-w-2xl mx-auto">
           {act.stats.map((s) => (
-            <div key={s.label} className="rounded-lg bg-black/25 px-3 py-3">
+            <div
+              key={s.label}
+              className="rounded-lg border border-white/10 bg-black/40 px-3 py-3 backdrop-blur-sm"
+            >
               <dt className="text-[11px] uppercase tracking-wide text-white/60">
                 {s.label}
               </dt>
@@ -306,7 +347,10 @@ function ActContent({ act }: { act: (typeof acts)[number] }) {
       {act.pillars && (
         <ul className="grid sm:grid-cols-2 gap-4 text-left mb-6">
           {act.pillars.map((p) => (
-            <li key={p.label} className="rounded-lg bg-black/25 px-4 py-3">
+            <li
+              key={p.label}
+              className="rounded-lg border border-white/10 bg-black/40 px-4 py-3 backdrop-blur-sm"
+            >
               <p className="text-sm font-semibold text-white mb-1">
                 {p.label}
               </p>

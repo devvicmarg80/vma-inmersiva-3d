@@ -51,6 +51,23 @@ h3 {
   text-wrap: balance;
 }
 
+/* Boomerang: the dot travels down and back up in one continuous loop,
+   like the scroll-hint affordance on Apple's product pages. */
+@keyframes scroll-hint-dot {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(10px);
+    opacity: 0.35;
+  }
+}
+.animate-scroll-hint-dot {
+  animation: scroll-hint-dot 1.6s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
