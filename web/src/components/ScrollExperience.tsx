@@ -29,6 +29,8 @@ export default function ScrollExperience() {
   );
   const [reducedMotion, setReducedMotion] = useState(false);
   const [ready, setReady] = useState(false);
+  const [bufferPct, setBufferPct] = useState(0);
+  const [fullyBuffered, setFullyBuffered] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -48,6 +50,58 @@ export default function ScrollExperience() {
       setReady(true);
     }
   }, []);
+
+  useEffect(() => {
+    // Scrubbing needs the whole file locally: seeking ahead of what's
+    // downloaded stalls the video until the network catches up. Rather than
+    // let that happen mid-scroll, block scrolling with a loading screen
+    // until the file is fully buffered, so every seek after that is instant
+    // regardless of connection speed.
+    if (reducedMotion) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    let cancelled = false;
+    const safetyTimeout = setTimeout(() => {
+      if (!cancelled) setFullyBuffered(true);
+    }, 30000);
+
+    const checkBuffered = () => {
+      const duration = video.duration;
+      if (!duration || !Number.isFinite(duration)) return;
+      const { buffered } = video;
+      const end = buffered.length ? buffered.end(buffered.length - 1) : 0;
+      const pct = clamp(end / duration, 0, 1);
+      setBufferPct(pct);
+      if (pct >= 0.995) {
+        setFullyBuffered(true);
+      }
+    };
+
+    video.addEventListener("progress", checkBuffered);
+    video.addEventListener("loadedmetadata", checkBuffered);
+    video.addEventListener("canplaythrough", checkBuffered);
+    checkBuffered();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(safetyTimeout);
+      video.removeEventListener("progress", checkBuffered);
+      video.removeEventListener("loadedmetadata", checkBuffered);
+      video.removeEventListener("canplaythrough", checkBuffered);
+    };
+  }, [reducedMotion]);
+
+  useEffect(() => {
+    if (reducedMotion || fullyBuffered) {
+      document.body.style.overflow = "";
+      return;
+    }
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [reducedMotion, fullyBuffered]);
 
   useEffect(() => {
     if (reducedMotion) return;
@@ -142,6 +196,19 @@ export default function ScrollExperience() {
                 "linear-gradient(180deg, rgba(11,26,46,0.35) 0%, rgba(11,26,46,0.15) 35%, rgba(11,26,46,0.55) 100%)",
             }}
           />
+          {!fullyBuffered && (
+            <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-[var(--ink)]/80 backdrop-blur-sm">
+              <div className="h-1 w-48 overflow-hidden rounded-full bg-white/15">
+                <div
+                  className="h-full rounded-full bg-[var(--ember)] transition-[width]"
+                  style={{ width: `${Math.round(bufferPct * 100)}%` }}
+                />
+              </div>
+              <p className="text-xs uppercase tracking-[0.14em] text-white/60">
+                Preparando la experiencia… {Math.round(bufferPct * 100)}%
+              </p>
+            </div>
+          )}
           {!ready && (
             <div
               className="absolute inset-0"
