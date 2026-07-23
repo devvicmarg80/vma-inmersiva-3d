@@ -54,7 +54,7 @@ export default function IntroOverlay() {
         <button
           type="button"
           onClick={dismiss}
-          className="absolute bottom-6 right-6 rounded-full border border-white/30 px-4 py-2 text-xs uppercase tracking-wide text-white/80 hover:bg-white/10"
+          className="absolute bottom-6 right-6 rounded-full border border-white/30 bg-black/30 px-4 py-2 text-xs uppercase tracking-wide text-white/80 backdrop-blur-sm transition-colors hover:bg-black/50"
         >
           Saltar intro
         </button>

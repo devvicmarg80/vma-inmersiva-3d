@@ -62,19 +62,28 @@ export default function ScrollExperience() {
     const tick = () => {
       raf = requestAnimationFrame(tick);
       if (!dirty) return;
-      dirty = false;
 
       const track = trackRef.current;
       const video = videoRef.current;
-      if (!track) return;
+      if (!track) {
+        dirty = false;
+        return;
+      }
 
       const totalScrollable = track.offsetHeight - window.innerHeight;
       const top = track.getBoundingClientRect().top;
       const progress = clamp(-top / totalScrollable, 0, 1);
 
+      // Skip the seek while a previous one is still resolving so seeks
+      // never queue up behind fast scrolling; `dirty` stays true so this
+      // retries next frame instead of dropping the update entirely.
       if (video && video.duration && Number.isFinite(video.duration)) {
+        if (video.seeking) {
+          return;
+        }
         video.currentTime = progress * video.duration;
       }
+      dirty = false;
 
       const p = progress * ACT_COUNT;
       const next = acts.map((_, i) => actOpacity(p, i));
@@ -168,7 +177,7 @@ export default function ScrollExperience() {
 function ActContent({ act }: { act: (typeof acts)[number] }) {
   return (
     <div className="max-w-3xl w-full text-center">
-      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/80">
+      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/80 backdrop-blur-sm">
         {act.tag}
       </div>
       {act.eyebrow && (
@@ -224,8 +233,8 @@ function ActContent({ act }: { act: (typeof acts)[number] }) {
               href={c.href}
               className={
                 i === 0
-                  ? "rounded-full bg-[var(--ember)] px-6 py-3 text-sm font-semibold text-[var(--ink)]"
-                  : "rounded-full border border-white/40 px-6 py-3 text-sm font-semibold text-white"
+                  ? "rounded-full bg-[var(--ember)] px-6 py-3 text-sm font-semibold text-[var(--ink)] shadow-lg shadow-black/30"
+                  : "rounded-full border border-white/40 bg-black/30 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-black/50"
               }
             >
               {c.label}
