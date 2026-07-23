@@ -243,7 +243,7 @@ function ClosingFooter() {
       id="contacto"
       className="border-t border-white/10 bg-[var(--ink)] px-6 py-16 text-center"
     >
-      <p className="font-serif text-2xl text-white mb-2">
+      <p className="text-2xl font-bold text-white mb-2">
         VMA · Innovación y Desarrollo
       </p>
       <p className="text-sm text-white/60">
