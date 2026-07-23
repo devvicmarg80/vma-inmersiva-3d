@@ -9,16 +9,27 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
+// Fraction of a segment's width spent fading in/out at each edge. The
+// remaining (1 - 2*FADE) in the middle holds at full opacity, so neighboring
+// acts only overlap during a short 2*FADE-wide handoff instead of dwelling
+// on top of each other's text for most of the scroll (which read as one
+// section's copy superimposed on the next's).
+const FADE = 0.12;
+
 /**
- * Triangular crossfade centered on each act's midpoint, one segment wide.
- * `p` is overall progress scaled to act units (0..ACT_COUNT). Clamping `p`
- * to the first/last act's center keeps act 0 fully opaque at scroll start
- * and the last act fully opaque at scroll end, instead of fading from/to 0.
+ * Trapezoidal crossfade: flat-opaque hold in the middle of each act's
+ * segment, fading only over the narrow FADE band at each edge. `p` is
+ * overall progress scaled to act units (0..ACT_COUNT). Clamping `p` to the
+ * first/last act's center keeps act 0 fully opaque at scroll start and the
+ * last act fully opaque at scroll end, instead of fading from/to 0.
  */
 function actOpacity(p: number, i: number) {
   const pClamped = clamp(p, 0.5, ACT_COUNT - 0.5);
   const distance = Math.abs(pClamped - (i + 0.5));
-  return clamp(1 - distance, 0, 1);
+  const hold = 0.5 - FADE;
+  if (distance <= hold) return 1;
+  if (distance >= 0.5) return 0;
+  return 1 - (distance - hold) / FADE;
 }
 
 export default function ScrollExperience() {
