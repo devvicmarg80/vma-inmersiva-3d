@@ -6,11 +6,11 @@ export function SiteFooter() {
   return (
     <Inview
       tag="footer"
-      from={{ opacity: 0, y: 40 }}
-      to={{ opacity: 1, y: 0 }}
+      from={{ opacity: 0, x: -90 }}
+      to={{ opacity: 1, x: 0 }}
       mode="once"
       config={{ tension: 170, friction: 22 }}
-      className="border-t border-white/10 bg-[var(--ink)] px-6 py-12 text-center"
+      className="border-t border-white/10 bg-transparent px-6 py-12 text-center"
     >
       {/* Plain <img>, not next/image — see SiteHeader.tsx for why. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}

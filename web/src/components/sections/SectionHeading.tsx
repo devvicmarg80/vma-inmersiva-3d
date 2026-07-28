@@ -33,7 +33,7 @@ export function SectionHeading({
       {eyebrow && (
         <Inview
           tag="p"
-          from={{ opacity: 0, y: -14 }}
+          from={{ opacity: 0, x: -90 }}
           to={{ opacity: 1, y: 0 }}
           mode="once"
           config={{ tension: 210, friction: 22 }}
@@ -60,7 +60,7 @@ export function SectionHeading({
       {description && (
         <Inview
           tag="p"
-          from={{ opacity: 0, y: 24 }}
+          from={{ opacity: 0, x: -90 }}
           to={{ opacity: 1, y: 0 }}
           mode="once"
           delayIn={200}

@@ -23,7 +23,7 @@ export function ValoresSection() {
             <Inview
               key={value.title}
               tag="div"
-              from={{ opacity: 0, x: i % 2 === 0 ? -90 : 90 }}
+              from={{ opacity: 0, x: -90 }}
               to={{ opacity: 1, x: 0 }}
               mode="always"
               delayIn={i * 150}
