@@ -22,7 +22,7 @@ export function SiteFooter() {
       <p className="mt-4 text-sm font-semibold text-white/80">
         VMA · Innovación y Desarrollo
       </p>
-      <p className="mt-1 text-xs text-white/40">
+      <p className="mt-1 text-xs text-white/60">
         VMA Global Capital Holding · DIFC, Dubái
       </p>
     </Inview>

@@ -155,8 +155,8 @@ export default function ScrollExperience() {
 
   if (reducedMotion) {
     return (
-      <main>
-        {acts.map((act) => (
+      <>
+        {acts.map((act, i) => (
           <section
             key={act.id}
             id={act.id}
@@ -167,16 +167,16 @@ export default function ScrollExperience() {
               backgroundPosition: "center",
             }}
           >
-            <ActContent act={act} />
+            <ActContent act={act} isFirst={i === 0} />
           </section>
         ))}
         <ScrollHint visible={showHint} />
-      </main>
+      </>
     );
   }
 
   return (
-    <main>
+    <>
       <div ref={trackRef} style={{ height: `${ACT_COUNT * VH_PER_ACT}vh` }} className="relative">
         <div className="sticky top-0 h-dvh w-full overflow-hidden">
           <video
@@ -223,13 +223,13 @@ export default function ScrollExperience() {
                 transform: `translateY(${(1 - activeStyles[i]) * 16}px)`,
               }}
             >
-              <ActContent act={act} />
+              <ActContent act={act} isFirst={i === 0} />
             </div>
           ))}
         </div>
       </div>
       <ScrollHint visible={showHint} />
-    </main>
+    </>
   );
 }
 
@@ -252,7 +252,14 @@ function ScrollHint({ visible }: { visible: boolean }) {
   );
 }
 
-function ActContent({ act }: { act: (typeof acts)[number] }) {
+function ActContent({
+  act,
+  isFirst = false,
+}: {
+  act: (typeof acts)[number];
+  isFirst?: boolean;
+}) {
+  const HeadlineTag = isFirst ? "h1" : "h2";
   return (
     <div className="max-w-3xl w-full text-center">
       <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/80 backdrop-blur-sm">
@@ -263,7 +270,9 @@ function ActContent({ act }: { act: (typeof acts)[number] }) {
           {act.eyebrow}
         </p>
       )}
-      <h2 className="text-3xl md:text-5xl text-white mb-4">{act.headline}</h2>
+      <HeadlineTag className="text-3xl md:text-5xl text-white mb-4">
+        {act.headline}
+      </HeadlineTag>
       {act.subheadline && (
         <p className="text-lg md:text-xl text-white/85 mb-6 max-w-2xl mx-auto">
           {act.subheadline}

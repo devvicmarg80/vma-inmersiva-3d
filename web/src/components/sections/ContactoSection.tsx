@@ -101,6 +101,7 @@ export function ContactoSection() {
                   required
                   maxLength={100}
                   placeholder="Nombre completo"
+                  aria-label="Nombre completo"
                   className={inputClass}
                 />
                 <input
@@ -108,11 +109,17 @@ export function ContactoSection() {
                   type="email"
                   required
                   placeholder="Correo electrónico"
+                  aria-label="Correo electrónico"
                   className={inputClass}
                 />
               </div>
 
-              <select name="interest" defaultValue="" className={inputClass}>
+              <select
+                name="interest"
+                defaultValue=""
+                aria-label="¿Cuál es tu interés?"
+                className={inputClass}
+              >
                 <option value="" disabled>
                   ¿Cuál es tu interés?
                 </option>
@@ -127,6 +134,7 @@ export function ContactoSection() {
                 maxLength={2000}
                 rows={5}
                 placeholder="Mensaje"
+                aria-label="Mensaje"
                 className={inputClass}
               />
 
