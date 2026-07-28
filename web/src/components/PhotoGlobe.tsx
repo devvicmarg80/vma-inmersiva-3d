@@ -308,7 +308,21 @@ export default function PhotoGlobe({
     // the rotation "catching"/pausing. A view into one pre-sized buffer
     // costs nothing to create; only the backing memory is allocated, once.
     const pixelBuffer = new ArrayBuffer(MAX_BUF_DIM * MAX_BUF_DIM * 4);
-    let lastBw = -1, lastBh = -1;
+    // Allocated (canvas) size, always >= the size actually needed this
+    // frame — kept separate from bw/bh below.
+    let allocW = 0, allocH = 0;
+    // Snapping the grow-threshold to a coarse grid (instead of resizing on
+    // *any* change) is what actually matters here: during scroll, R shifts
+    // by a fraction of a pixel most frames (continuous keyframe
+    // interpolation), and `bufCanvas.width = ...` forces the browser to
+    // reallocate the canvas's backing store even when the size is
+    // unchanged in any way that matters visually. That reallocation
+    // happening on nearly every frame while scrolling — on top of the
+    // raycasting itself — is what read as the rotation stuttering
+    // specifically during scroll (it was smooth at rest, where R is
+    // static). Shrinking never needs a reallocation: the existing buffer
+    // is already big enough, we just use a smaller sub-rect of it.
+    const GROW_SNAP = 24;
 
     function renderSphere(rotY: number, rotX: number) {
       if (!bufCtx || !texData) return;
@@ -322,11 +336,11 @@ export default function PhotoGlobe({
       const scale = Math.min(1, MAX_BUF_DIM / Math.max(vw, vh));
       const bw = Math.max(1, Math.round(vw * scale));
       const bh = Math.max(1, Math.round(vh * scale));
-      if (bw !== lastBw || bh !== lastBh) {
-        bufCanvas.width = bw;
-        bufCanvas.height = bh;
-        lastBw = bw;
-        lastBh = bh;
+      if (bw > allocW || bh > allocH) {
+        allocW = Math.min(MAX_BUF_DIM, Math.ceil(bw / GROW_SNAP) * GROW_SNAP);
+        allocH = Math.min(MAX_BUF_DIM, Math.ceil(bh / GROW_SNAP) * GROW_SNAP);
+        bufCanvas.width = allocW;
+        bufCanvas.height = allocH;
       }
       const data = new Uint8ClampedArray(pixelBuffer, 0, bw * bh * 4);
       const imgData = new ImageData(data, bw, bh);
