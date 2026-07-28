@@ -37,8 +37,8 @@ export function SectionHeading({
           to={{ opacity: 1, y: 0 }}
           mode="once"
           config={{ tension: 210, friction: 22 }}
-          className={`mb-3 text-sm uppercase tracking-[0.14em] text-[var(--ember)] ${
-            align === "center" ? "text-center" : ""
+          className={`mb-3 inline-block rounded-full bg-[var(--ink)] px-3 py-1 text-sm uppercase tracking-[0.14em] text-[var(--ember)] ${
+            align === "center" ? "mx-auto text-center" : ""
           }`}
         >
           {eyebrow}
