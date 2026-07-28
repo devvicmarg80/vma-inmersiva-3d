@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
+import { AdaptiveGrid } from "@/components/common/grid";
+import { ReducedMotion } from "@/components/common/reduced-motion";
+import { ScrollLayout } from "@/layouts/scroll-layout";
+import SiteHeader from "@/components/SiteHeader";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -21,7 +25,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`h-full antialiased ${roboto.variable}`}>
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        <ScrollLayout>
+          <AdaptiveGrid />
+          <ReducedMotion />
+          <SiteHeader />
+          {children}
+        </ScrollLayout>
+      </body>
     </html>
   );
 }

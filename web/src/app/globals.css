@@ -1,71 +1,170 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   TIER 1 — PRIMITIVES  (`--raw-*`)
+   Raw literal values. The only tier allowed to contain a hex/px/ms literal.
+   Never referenced in markup, never bound into @theme.
+   Grammar: --raw-<category>-<name>[-<shade>]
+   Convention ported from next16-claude-starter (Textura) — see
+   obsidian/frontend/design-system.md in that repo for the full rationale.
+   --------------------------------------------------------------------------- */
 :root {
-  --ink: #0b1a2e;
-  --ink-soft: #3c4c61;
-  --paper: #eef1f5;
-  --paper-raised: #ffffff;
-  --navy: #123a5c;
-  --steel: #3e77ac;
-  --steel-soft: #dce6ef;
-  --ember: #bd7a3b;
-  --ember-soft: #f1e3d2;
-  --silver: #8fa0af;
-  --rule: #cbd5de;
+  --raw-color-ink: #0b1a2e;
+  --raw-color-ink-soft: #3c4c61;
+  --raw-color-paper: #eef1f5;
+  --raw-color-paper-raised: #ffffff;
+  --raw-color-navy: #123a5c;
+  --raw-color-steel: #3e77ac;
+  --raw-color-steel-soft: #dce6ef;
+  --raw-color-ember: #bd7a3b;
+  --raw-color-ember-soft: #f1e3d2;
+  --raw-color-silver: #8fa0af;
+  --raw-color-rule: #cbd5de;
+  --raw-color-cyan: #22d3ee;
+
+  --raw-duration-fast: 150ms;
+  --raw-duration-normal: 250ms;
+}
+
+/* ---------------------------------------------------------------------------
+   TIER 2 — SEMANTIC  (role names, no namespace prefix)
+   Purpose, not appearance — always `var(--raw-*)`, never a literal. This is
+   the themeable layer; a re-theme only ever touches Tier 1 + this tier.
+   Grammar: --<role>[-<variant>][-<state>]
+   --------------------------------------------------------------------------- */
+:root {
+  --ink: var(--raw-color-ink);
+  --ink-soft: var(--raw-color-ink-soft);
+  --paper: var(--raw-color-paper);
+  --paper-raised: var(--raw-color-paper-raised);
+  --navy: var(--raw-color-navy);
+  --steel: var(--raw-color-steel);
+  --steel-soft: var(--raw-color-steel-soft);
+  --ember: var(--raw-color-ember);
+  --ember-soft: var(--raw-color-ember-soft);
+  --silver: var(--raw-color-silver);
+  --rule: var(--raw-color-rule);
+  --cyan: var(--raw-color-cyan);
+
+  --duration-fast: var(--raw-duration-fast);
+  --duration-normal: var(--raw-duration-normal);
 
   --sans: var(--font-roboto), -apple-system, BlinkMacSystemFont, "Segoe UI",
     Helvetica, Arial, sans-serif;
 }
 
+/* ---------------------------------------------------------------------------
+   THEME BINDINGS — map semantic tokens into Tailwind namespaces.
+   Every entry is exactly `--<tw-namespace>-<role>: var(--<role>)`. `inline`
+   inlines the var() into each generated utility.
+   --------------------------------------------------------------------------- */
 @theme inline {
   --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
   --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
   --color-navy: var(--navy);
   --color-steel: var(--steel);
+  --color-steel-soft: var(--steel-soft);
   --color-ember: var(--ember);
+  --color-ember-soft: var(--ember-soft);
+  --color-silver: var(--silver);
+  --color-rule: var(--rule);
+  --color-cyan: var(--cyan);
   --font-sans: var(--sans);
+
+  /* Leading floor for clipped TextEngine reveals — see
+     obsidian/frontend/text-engine.md → "Alignment & line-height" in the
+     next16-claude-starter vault. */
+  --leading-display: 1.1;
+
+  --ease-entrance: cubic-bezier(0.2, 0, 0, 1);
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  height: 100%;
-}
-
-body {
-  background: var(--ink);
-  color: var(--paper);
-  font-family: var(--sans);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-}
-
-h1,
-h2,
-h3 {
-  font-family: var(--sans);
-  font-weight: 700;
-  text-wrap: balance;
-}
-
-/* Boomerang: the dot travels down and back up in one continuous loop,
-   like the scroll-hint affordance on Apple's product pages. */
-@keyframes scroll-hint-dot {
-  0%,
-  100% {
-    transform: translateY(0);
-    opacity: 1;
+@layer base {
+  * {
+    box-sizing: border-box;
   }
-  50% {
-    transform: translateY(10px);
-    opacity: 0.35;
+
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--sans);
+    font-weight: 700;
+    text-wrap: balance;
+  }
+
+  /* Adaptive scaling grid — scales the root font-size with the viewport so a
+     rem-based layout stays proportional. Each breakpoint divides FONT_BASE
+     (16px) by the design base width its range was laid out at:
+       font-size: 16 * 100 / baseWidth  (vw)
+     Above 1920px, <AdaptiveGrid> (mounted in layout.tsx) takes over for the
+     scale-up. Keep in sync with
+     src/components/common/grid/grid.config.ts. */
+  html {
+    font-size: 16px;
+  }
+
+  @media (max-width: 1920px) {
+    html {
+      font-size: 0.833333vw; /* 16 * 100 / 1920 */
+    }
+  }
+
+  @media (max-width: 1440px) {
+    html {
+      font-size: 1.111111vw; /* 16 * 100 / 1440 */
+    }
+  }
+
+  @media (max-width: 1024px) {
+    html {
+      font-size: 1.5625vw; /* 16 * 100 / 1024 */
+    }
+  }
+
+  @media (max-width: 640px) {
+    html {
+      font-size: 2.5vw; /* 16 * 100 / 640 */
+    }
   }
 }
-.animate-scroll-hint-dot {
-  animation: scroll-hint-dot 1.6s ease-in-out infinite;
+
+@layer utilities {
+  /* Boomerang: the dot travels down and back up in one continuous loop,
+     like the scroll-hint affordance on Apple's product pages. Predates the
+     spring-based motion convention adopted for every section below it; left
+     as CSS since it already works and isn't worth re-deriving as a spring. */
+  @keyframes scroll-hint-dot {
+    0%,
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    50% {
+      transform: translateY(10px);
+      opacity: 0.35;
+    }
+  }
+  .animate-scroll-hint-dot {
+    animation: scroll-hint-dot 1.6s ease-in-out infinite;
+  }
+}
+
+@layer components {
 }
 
 @media (prefers-reduced-motion: reduce) {
