@@ -26,16 +26,11 @@ export const acts: Act[] = [
     poster: "/img/01.jpeg",
   },
   {
-    id: "holding",
-    tag: "Capital",
-    eyebrow: "VMA Global Capital Holding · DIFC, Dubái",
-    headline: "Un holding construido para canalizar capital hacia impacto real.",
-    body: "Con sede en el Dubai International Financial Centre, VMA Global Capital Holding administra fondos, gestiona riesgo y dirige inversión hacia proyectos de educación, infraestructura, tecnología y sostenibilidad en Colombia y América Latina — bajo gobierno corporativo, informes trimestrales y salidas pactadas.",
-    stats: [
-      { label: "Accionistas fundadores", value: "60%" },
-      { label: "Inversionistas estratégicos", value: "30%" },
-      { label: "Inversión de impacto / semilla", value: "10%" },
-    ],
+    id: "identidad",
+    tag: "Quiénes somos",
+    eyebrow: "VMA Grupo Empresarial de Desarrollo e Innovación S.A.S.",
+    headline: "Desarrollo con propósito.",
+    body: "Una organización comprometida con la transformación social a través de la educación, la infraestructura, la innovación tecnológica y la sostenibilidad — mejorando la calidad de vida de comunidades en Colombia y América Latina, con la responsabilidad social empresarial como pilar de cada proyecto.",
     poster: "/img/02.jpeg",
   },
   {
@@ -103,9 +98,9 @@ export const acts: Act[] = [
 
 /**
  * Pendiente antes de lanzar:
- * - Reemplazar los "—" del acto "red-viva" con cifras reales de VMA.
- * - Confirmar correo/teléfono de contacto real (el documento fuente traía
- *   placeholders "info@vmahgroup.com" / "+971 XXX XXX XXX" sin confirmar).
+ * - Confirmar correo/teléfono de contacto real — ningún documento fuente
+ *   trae uno confirmado, así que el formulario de contacto sigue siendo el
+ *   único canal hasta que se defina un inbox público.
  */
 export const contact = {
   email: null as string | null,

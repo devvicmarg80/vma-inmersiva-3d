@@ -2,8 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { acts } from "@/content/copy";
+import CursorDistortion from "./CursorDistortion";
 
 const ACT_COUNT = acts.length;
+
+// Physical scroll distance per act. 100vh/act (600vh total for 6 acts) meant
+// six full page-heights of scrolling to see the whole video — the dominant
+// cause of the scrub feeling slow, independent of any scroll-smoothing
+// config. This only changes how much wheel/touch input is needed to reach a
+// given point in the video; the video's own 34s runtime and the acts'
+// crossfade timing (still driven by 0..1 progress) are untouched.
+const VH_PER_ACT = 62;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -40,14 +49,23 @@ export default function ScrollExperience() {
   );
   const [reducedMotion, setReducedMotion] = useState(false);
   const [ready, setReady] = useState(false);
-  const [bufferPct, setBufferPct] = useState(0);
-  const [fullyBuffered, setFullyBuffered] = useState(false);
+  const [pointerFine, setPointerFine] = useState(false);
   const [showHint, setShowHint] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReducedMotion(mq.matches);
     const onChange = () => setReducedMotion(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  useEffect(() => {
+    // Only devices with a real mouse get the cursor-distortion layer — it's
+    // wasted GPU/battery on touch, which never fires pointermove anyway.
+    const mq = window.matchMedia("(pointer: fine) and (hover: hover)");
+    setPointerFine(mq.matches);
+    const onChange = () => setPointerFine(mq.matches);
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
   }, []);
@@ -64,78 +82,15 @@ export default function ScrollExperience() {
   }, []);
 
   useEffect(() => {
-    // Scrubbing needs the whole file locally: seeking ahead of what's
-    // downloaded stalls the video until the network catches up. Chrome's
-    // own buffering for a paused <video preload="auto"> stops well short of
-    // the full file regardless of that hint, so instead we fetch the file
-    // ourselves, track real progress, and hand the video a blob URL once
-    // it's 100% local — every seek after that is instant no matter the
-    // connection speed. Scrolling stays locked behind a loading screen
-    // until then.
+    // Scroll is never gated on the video anymore (forcing a full download
+    // before letting the page respond hurt load performance/SEO more than
+    // scrub smoothness was worth) — the browser streams it progressively via
+    // the native preload hint instead. Just surface the scroll hint shortly
+    // after mount.
     if (reducedMotion) return;
-    const video = videoRef.current;
-    if (!video) return;
-
-    let cancelled = false;
-    let objectUrl: string | null = null;
-    const controller = new AbortController();
-    const safetyTimeout = setTimeout(() => {
-      if (!cancelled) setFullyBuffered(true);
-    }, 45000);
-
-    (async () => {
-      try {
-        const res = await fetch("/video/VMA_Narrative.mp4", {
-          signal: controller.signal,
-        });
-        if (!res.body) throw new Error("no response body");
-        const total = Number(res.headers.get("content-length")) || 0;
-        const reader = res.body.getReader();
-        const chunks: BlobPart[] = [];
-        let received = 0;
-        for (;;) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
-          received += value.byteLength;
-          if (total) setBufferPct(clamp(received / total, 0, 1));
-        }
-        if (cancelled) return;
-        const blob = new Blob(chunks, { type: "video/mp4" });
-        objectUrl = URL.createObjectURL(blob);
-        video.src = objectUrl;
-        setBufferPct(1);
-        setFullyBuffered(true);
-      } catch {
-        if (!cancelled) setFullyBuffered(true); // fail open, degrade to normal streaming
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-      clearTimeout(safetyTimeout);
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
+    const t = setTimeout(() => setShowHint(true), 400);
+    return () => clearTimeout(t);
   }, [reducedMotion]);
-
-  useEffect(() => {
-    if (reducedMotion || fullyBuffered) {
-      document.body.style.overflow = "";
-      return;
-    }
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [reducedMotion, fullyBuffered]);
-
-  useEffect(() => {
-    if (reducedMotion) return;
-    // Invite the visitor to scroll once the experience is actually
-    // interactive, and dismiss the hint for good the moment they do.
-    if (fullyBuffered) setShowHint(true);
-  }, [reducedMotion, fullyBuffered]);
 
   useEffect(() => {
     if (reducedMotion) return;
@@ -200,60 +155,52 @@ export default function ScrollExperience() {
 
   if (reducedMotion) {
     return (
-      <main>
-        {acts.map((act) => (
+      <>
+        {acts.map((act, i) => (
           <section
             key={act.id}
             id={act.id}
-            className="relative min-h-screen flex items-center justify-center px-6 py-24"
+            className="relative min-h-dvh flex items-center justify-center px-6 py-24"
             style={{
               backgroundImage: `linear-gradient(rgba(11,26,46,0.55), rgba(11,26,46,0.75)), url(${act.poster})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
           >
-            <ActContent act={act} />
+            <ActContent act={act} isFirst={i === 0} />
           </section>
         ))}
-        <ClosingFooter />
         <ScrollHint visible={showHint} />
-      </main>
+      </>
     );
   }
 
   return (
-    <main>
-      <div ref={trackRef} style={{ height: `${ACT_COUNT * 100}vh` }} className="relative">
-        <div className="sticky top-0 h-screen w-full overflow-hidden">
+    <>
+      <div ref={trackRef} style={{ height: `${ACT_COUNT * VH_PER_ACT}vh` }} className="relative">
+        <div className="sticky top-0 h-dvh w-full overflow-hidden">
           <video
             ref={videoRef}
+            src="/video/VMA_Narrative.mp4"
             muted
             playsInline
-            preload="none"
+            preload="auto"
             poster={acts[0].poster}
             onLoadedMetadata={() => setReady(true)}
             className="absolute inset-0 h-full w-full object-cover"
           />
+          {pointerFine && ready && <CursorDistortion videoRef={videoRef} />}
           <div
             className="absolute inset-0"
             style={{
               background:
-                "linear-gradient(180deg, rgba(11,26,46,0.35) 0%, rgba(11,26,46,0.15) 35%, rgba(11,26,46,0.55) 100%)",
+                // Wider, translucent (never solid) darkening toward the
+                // bottom — enough of a diffused band to soften the handoff
+                // into the Earth video below without capping at full black,
+                // which dimmed the hero for its entire normal viewing time.
+                "linear-gradient(180deg, rgba(11,26,46,0.35) 0%, rgba(11,26,46,0.15) 30%, rgba(11,26,46,0.55) 65%, rgba(11,26,46,0.65) 100%)",
             }}
           />
-          {!fullyBuffered && (
-            <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-[var(--ink)]/80 backdrop-blur-sm">
-              <div className="h-1 w-48 overflow-hidden rounded-full bg-white/15">
-                <div
-                  className="h-full rounded-full bg-[var(--ember)] transition-[width]"
-                  style={{ width: `${Math.round(bufferPct * 100)}%` }}
-                />
-              </div>
-              <p className="text-xs uppercase tracking-[0.14em] text-white/60">
-                Preparando la experiencia… {Math.round(bufferPct * 100)}%
-              </p>
-            </div>
-          )}
           {!ready && (
             <div
               className="absolute inset-0"
@@ -276,14 +223,13 @@ export default function ScrollExperience() {
                 transform: `translateY(${(1 - activeStyles[i]) * 16}px)`,
               }}
             >
-              <ActContent act={act} />
+              <ActContent act={act} isFirst={i === 0} />
             </div>
           ))}
         </div>
       </div>
-      <ClosingFooter />
       <ScrollHint visible={showHint} />
-    </main>
+    </>
   );
 }
 
@@ -291,7 +237,10 @@ function ScrollHint({ visible }: { visible: boolean }) {
   return (
     <div
       className="pointer-events-none fixed inset-x-0 bottom-6 z-30 flex flex-col items-center gap-2 transition-opacity duration-700 sm:bottom-8"
-      style={{ opacity: visible ? 1 : 0 }}
+      style={{
+        opacity: visible ? 1 : 0,
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}
     >
       <div className="flex h-9 w-6 items-start justify-center rounded-full border-2 border-white/50 p-1">
         <div className="h-1.5 w-1.5 rounded-full bg-white/80 animate-scroll-hint-dot" />
@@ -303,7 +252,14 @@ function ScrollHint({ visible }: { visible: boolean }) {
   );
 }
 
-function ActContent({ act }: { act: (typeof acts)[number] }) {
+function ActContent({
+  act,
+  isFirst = false,
+}: {
+  act: (typeof acts)[number];
+  isFirst?: boolean;
+}) {
+  const HeadlineTag = isFirst ? "h1" : "h2";
   return (
     <div className="max-w-3xl w-full text-center">
       <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/80 backdrop-blur-sm">
@@ -314,7 +270,9 @@ function ActContent({ act }: { act: (typeof acts)[number] }) {
           {act.eyebrow}
         </p>
       )}
-      <h2 className="text-3xl md:text-5xl text-white mb-4">{act.headline}</h2>
+      <HeadlineTag className="text-3xl md:text-5xl text-white mb-4">
+        {act.headline}
+      </HeadlineTag>
       {act.subheadline && (
         <p className="text-lg md:text-xl text-white/85 mb-6 max-w-2xl mx-auto">
           {act.subheadline}
@@ -378,21 +336,5 @@ function ActContent({ act }: { act: (typeof acts)[number] }) {
         </div>
       )}
     </div>
-  );
-}
-
-function ClosingFooter() {
-  return (
-    <footer
-      id="contacto"
-      className="border-t border-white/10 bg-[var(--ink)] px-6 py-16 text-center"
-    >
-      <p className="text-2xl font-bold text-white mb-2">
-        VMA · Innovación y Desarrollo
-      </p>
-      <p className="text-sm text-white/60">
-        Contacto pendiente de confirmar antes de publicar este sitio.
-      </p>
-    </footer>
   );
 }

@@ -1,11 +1,11 @@
-import IntroOverlay from "@/components/IntroOverlay";
 import ScrollExperience from "@/components/ScrollExperience";
+import { PostVideoSections } from "@/components/sections/PostVideoSections";
 
 export default function Home() {
   return (
-    <>
-      <IntroOverlay />
+    <main>
       <ScrollExperience />
-    </>
+      <PostVideoSections />
+    </main>
   );
 }
