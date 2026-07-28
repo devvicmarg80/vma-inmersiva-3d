@@ -72,9 +72,16 @@ const SPIN_SPEED = 0.00032; // rad/ms — full rotation every ~19.6s
 // which is exactly when scroll also adds its own load — that combination
 // is what read as the rotation stuttering specifically while growing.
 // Paired with the adaptive QUALITY_MIN below for extra headroom under load.
-const MAX_BUF_DIM = 1000;
-const QUALITY_MIN = 0.6;
+const MAX_BUF_DIM = 820;
+const QUALITY_MIN = 0.45;
 const FRAME_BUDGET_MS = 16.7; // 60fps
+// Below this qualityScale, texture sampling drops to nearest-neighbor —
+// bilinear's 4 reads + weighted sum is the single most expensive part of
+// the per-pixel cost. At this point the buffer is already downscaled
+// enough (upscale itself softens edges) that the blockiness nearest would
+// normally show is barely visible, so it's a close-to-free speed win
+// exactly when frames are already struggling.
+const NEAREST_BELOW_QUALITY = 0.85;
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
@@ -358,6 +365,11 @@ export default function PhotoGlobe({
       const TWO_PI = Math.PI * 2;
       const toCssX = vw / bw, toCssY = vh / bh;
       const tex = texData;
+      // Bilinear's 4 reads + weighted sum is the single priciest part of
+      // the per-pixel cost — skip it under sustained load. The buffer is
+      // already downscaled by qualityScale at that point, so the upscale
+      // masks most of the blockiness nearest-neighbor would otherwise show.
+      const useNearest = qualityScale < NEAREST_BELOW_QUALITY;
 
       for (let py = 0; py < bh; py++) {
         const cssY = vy0 + (py + 0.5) * toCssY;
@@ -387,32 +399,44 @@ export default function PhotoGlobe({
           const u = theta / TWO_PI + 0.5;
           const v = phi / Math.PI;
 
-          // Bilinear sample — longitude wraps (mod texW), latitude clamps
-          // at the poles (no wrap).
-          const fx = u * texW - 0.5;
-          const fy = v * texH - 0.5;
-          let tx0 = Math.floor(fx), ty0 = Math.floor(fy);
-          const fxFrac = fx - tx0, fyFrac = fy - ty0;
-          let tx1 = tx0 + 1, ty1 = ty0 + 1;
-          tx0 = ((tx0 % texW) + texW) % texW;
-          tx1 = ((tx1 % texW) + texW) % texW;
-          if (ty0 < 0) ty0 = 0; else if (ty0 > texH - 1) ty0 = texH - 1;
-          if (ty1 < 0) ty1 = 0; else if (ty1 > texH - 1) ty1 = texH - 1;
-
-          const i00 = (ty0 * texW + tx0) * 4;
-          const i10 = (ty0 * texW + tx1) * 4;
-          const i01 = (ty1 * texW + tx0) * 4;
-          const i11 = (ty1 * texW + tx1) * 4;
-          const w00 = (1 - fxFrac) * (1 - fyFrac);
-          const w10 = fxFrac * (1 - fyFrac);
-          const w01 = (1 - fxFrac) * fyFrac;
-          const w11 = fxFrac * fyFrac;
-
           // limb darkening — cheap stand-in for atmospheric falloff.
           const shade = 0.5 + 0.5 * ndcZ;
-          data[idx] = (tex[i00] * w00 + tex[i10] * w10 + tex[i01] * w01 + tex[i11] * w11) * shade;
-          data[idx + 1] = (tex[i00 + 1] * w00 + tex[i10 + 1] * w10 + tex[i01 + 1] * w01 + tex[i11 + 1] * w11) * shade;
-          data[idx + 2] = (tex[i00 + 2] * w00 + tex[i10 + 2] * w10 + tex[i01 + 2] * w01 + tex[i11 + 2] * w11) * shade;
+
+          if (useNearest) {
+            let tx = (u * texW) | 0;
+            let ty = (v * texH) | 0;
+            tx = ((tx % texW) + texW) % texW;
+            if (ty < 0) ty = 0; else if (ty > texH - 1) ty = texH - 1;
+            const ti = (ty * texW + tx) * 4;
+            data[idx] = tex[ti] * shade;
+            data[idx + 1] = tex[ti + 1] * shade;
+            data[idx + 2] = tex[ti + 2] * shade;
+          } else {
+            // Bilinear — longitude wraps (mod texW), latitude clamps at
+            // the poles (no wrap).
+            const fx = u * texW - 0.5;
+            const fy = v * texH - 0.5;
+            let tx0 = Math.floor(fx), ty0 = Math.floor(fy);
+            const fxFrac = fx - tx0, fyFrac = fy - ty0;
+            let tx1 = tx0 + 1, ty1 = ty0 + 1;
+            tx0 = ((tx0 % texW) + texW) % texW;
+            tx1 = ((tx1 % texW) + texW) % texW;
+            if (ty0 < 0) ty0 = 0; else if (ty0 > texH - 1) ty0 = texH - 1;
+            if (ty1 < 0) ty1 = 0; else if (ty1 > texH - 1) ty1 = texH - 1;
+
+            const i00 = (ty0 * texW + tx0) * 4;
+            const i10 = (ty0 * texW + tx1) * 4;
+            const i01 = (ty1 * texW + tx0) * 4;
+            const i11 = (ty1 * texW + tx1) * 4;
+            const w00 = (1 - fxFrac) * (1 - fyFrac);
+            const w10 = fxFrac * (1 - fyFrac);
+            const w01 = (1 - fxFrac) * fyFrac;
+            const w11 = fxFrac * fyFrac;
+
+            data[idx] = (tex[i00] * w00 + tex[i10] * w10 + tex[i01] * w01 + tex[i11] * w11) * shade;
+            data[idx + 1] = (tex[i00 + 1] * w00 + tex[i10 + 1] * w10 + tex[i01 + 1] * w01 + tex[i11 + 1] * w11) * shade;
+            data[idx + 2] = (tex[i00 + 2] * w00 + tex[i10 + 2] * w10 + tex[i01 + 2] * w01 + tex[i11 + 2] * w11) * shade;
+          }
           data[idx + 3] = 255;
         }
       }
@@ -482,9 +506,9 @@ export default function PhotoGlobe({
       if (lastFrameAt) {
         const frameMs = now - lastFrameAt;
         if (frameMs > FRAME_BUDGET_MS * 1.4) {
-          qualityScale = Math.max(QUALITY_MIN, qualityScale - 0.08);
+          qualityScale = Math.max(QUALITY_MIN, qualityScale - 0.16);
         } else if (frameMs < FRAME_BUDGET_MS * 1.1) {
-          qualityScale = Math.min(1, qualityScale + 0.02);
+          qualityScale = Math.min(1, qualityScale + 0.015);
         }
       }
       lastFrameAt = now;
