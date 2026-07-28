@@ -66,7 +66,15 @@ const HOME_LON = -76;
 const HOME_LAT = 4.7; // Colombia — VMA HQ
 const ROT_BASE = (HOME_LON - 90) * DEG2RAD; // faces Colombia forward at rest
 const SPIN_SPEED = 0.00032; // rad/ms — full rotation every ~19.6s
-const MAX_BUF_DIM = 1400;
+// Hard ceiling on the raycast buffer's largest side. Was 1400 — at the
+// grown Valores keyframe (rMult 1.55) the visible area routinely maxed
+// this out (~2M pixels/frame of per-pixel trig + bilinear sampling),
+// which is exactly when scroll also adds its own load — that combination
+// is what read as the rotation stuttering specifically while growing.
+// Paired with the adaptive QUALITY_MIN below for extra headroom under load.
+const MAX_BUF_DIM = 1000;
+const QUALITY_MIN = 0.6;
+const FRAME_BUDGET_MS = 16.7; // 60fps
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
@@ -324,7 +332,7 @@ export default function PhotoGlobe({
     // is already big enough, we just use a smaller sub-rect of it.
     const GROW_SNAP = 24;
 
-    function renderSphere(rotY: number, rotX: number) {
+    function renderSphere(rotY: number, rotX: number, qualityScale: number) {
       if (!bufCtx || !texData) return;
       const vx0 = Math.max(0, Math.floor(cx - R));
       const vx1 = Math.min(W, Math.ceil(cx + R));
@@ -333,7 +341,7 @@ export default function PhotoGlobe({
       const vw = vx1 - vx0, vh = vy1 - vy0;
       if (vw <= 0 || vh <= 0) return;
 
-      const scale = Math.min(1, MAX_BUF_DIM / Math.max(vw, vh));
+      const scale = Math.min(1, (MAX_BUF_DIM * qualityScale) / Math.max(vw, vh));
       const bw = Math.max(1, Math.round(vw * scale));
       const bh = Math.max(1, Math.round(vh * scale));
       if (bw > allocW || bh > allocH) {
@@ -426,6 +434,14 @@ export default function PhotoGlobe({
     let dragYOffset = 0;
     let dragging = false, lastPX = 0, lastPY = 0;
 
+    // Adaptive render quality: when a frame runs over budget (heaviest
+    // exactly while scrolling + growing, since both the raycast area and
+    // the scroll handler's own work land on the same thread), trade
+    // resolution for smoothness; recover it once frames are cheap again.
+    // This is on top of — not instead of — the MAX_BUF_DIM cut above.
+    let qualityScale = 1;
+    let lastFrameAt = 0;
+
     const onPointerDown = (e: PointerEvent) => {
       dragging = true;
       lastPX = e.clientX;
@@ -463,6 +479,16 @@ export default function PhotoGlobe({
       if (disposed) return;
       if (!inView) return;
 
+      if (lastFrameAt) {
+        const frameMs = now - lastFrameAt;
+        if (frameMs > FRAME_BUDGET_MS * 1.4) {
+          qualityScale = Math.max(QUALITY_MIN, qualityScale - 0.08);
+        } else if (frameMs < FRAME_BUDGET_MS * 1.1) {
+          qualityScale = Math.min(1, qualityScale + 0.02);
+        }
+      }
+      lastFrameAt = now;
+
       const spinNow = reduceMotion ? 0 : now;
       const progress = progressRef.current ?? 0;
       const kf = keyframeAt(progress);
@@ -489,7 +515,7 @@ export default function PhotoGlobe({
       drawSatellites(spinNow, rotY, rotX, false);
 
       if (texReady) {
-        renderSphere(rotY, rotX);
+        renderSphere(rotY, rotX, qualityScale);
       } else {
         ctx.fillStyle = "#0a2438";
         ctx.beginPath();
