@@ -1,0 +1,36 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"VMA_LANDINGPAGE_3D — before doing project work: read CLAUDE.md / AGENTS.md at the repo root and in web/. Run git status first — this repo has a habit of accumulating large uncommitted work (an in-progress port of the animation/scroll/grid system from next16-claude-starter). Do not silently build on top of, discard, or bundle unrelated uncommitted changes into your own commit. Keep unrelated changes in separate, reviewable commits.\"}}'",
+            "statusMessage": "Loading project guide"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"Reminder: check `git status` before committing — stage only the files this specific change touches. If you add a dependency, component, or route, note it in CLAUDE.md so the next session (human or AI) knows it exists.\"}}'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "M=\"${TMPDIR:-/tmp}/claude-vma-stop-$(jq -r .session_id 2>/dev/null)\"; if [ -f \"$M\" ]; then rm -f \"$M\"; exit 0; fi; touch \"$M\"; echo '{\"decision\":\"block\",\"reason\":\"Before finishing: did this turn leave new uncommitted changes? If they are ready, commit them with a scoped message. If they are not finished, say so explicitly to the user rather than leaving silent WIP — this project already has one large undocumented in-progress migration; do not add a second.\"}'",
+            "statusMessage": "Checking for undocumented WIP"
+          }
+        ]
+      }
+    ]
+  }
+}
