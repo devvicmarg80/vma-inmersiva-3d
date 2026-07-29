@@ -21,7 +21,7 @@
   --raw-color-silver: #8fa0af;
   --raw-color-rule: #cbd5de;
   --raw-color-cyan: #22d3ee;
-  --raw-color-panel: #101d30;
+  --raw-color-panel: #08111f;
 
   --raw-duration-fast: 150ms;
   --raw-duration-normal: 250ms;
@@ -46,10 +46,21 @@
   --silver: var(--raw-color-silver);
   --rule: var(--raw-color-rule);
   --cyan: var(--raw-color-cyan);
-  /* Fondo interior de las tarjetas con borde-gradiente (HudCard) — un
-     punto más claro que --ink para que la tarjeta se despegue de la
-     página incluso cuando el borde-gradiente no está en hover. */
+  /* Fondo interior de las tarjetas (HudCard) — más oscuro que --ink, la
+     tarjeta se despega de la página por el hairline + edge-light al
+     hover, no por diferencia de tono. */
   --panel: var(--raw-color-panel);
+
+  /* Botones — reemplaza el naranja (--ember) para las acciones primarias:
+     azul oscuro hacia cyan, misma familia que el borde-gradiente de
+     HudCard. --ember se conserva para acentos de texto (subrayado activo,
+     foco de input), solo los botones cambian. */
+  --gradient-cta: linear-gradient(
+    135deg,
+    var(--navy) 0%,
+    var(--steel) 55%,
+    var(--cyan) 100%
+  );
 
   --duration-fast: var(--raw-duration-fast);
   --duration-normal: var(--raw-duration-normal);
@@ -182,6 +193,25 @@
   }
   .animate-scroll-hint-dot {
     animation: scroll-hint-dot 1.6s ease-in-out infinite;
+  }
+
+  /* Ambient particles for HudCard — pure CSS (transform + opacity only,
+     no JS) so it stays cheap across many simultaneous cards; three
+     staggered instances (see the delay/duration modifiers below) read as
+     independent motion from one shared keyframe. */
+  @keyframes card-particle-drift {
+    0%,
+    100% {
+      transform: translate(0, 0);
+      opacity: 0.3;
+    }
+    50% {
+      transform: translate(6px, -10px);
+      opacity: 0.8;
+    }
+  }
+  .animate-card-particle {
+    animation: card-particle-drift 9s ease-in-out infinite;
   }
 }
 

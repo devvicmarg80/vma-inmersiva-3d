@@ -6,18 +6,26 @@ import { Inview } from "@/components/animation/springs/in-view";
 import { useMagneticCard } from "@/hooks/useMagneticCard";
 
 /**
- * Glowing gradient-border card with a magnetic-tilt hover system: the card
- * rotates toward the cursor (spring physics via useMagneticCard, never
- * linear), a radial spotlight tracks the pointer like a reflection on
- * glass, and icon/index/title/body sit at increasing translateZ depths so
- * the tilt reads as real parallax instead of a flat rotated rectangle.
- * Gradients stay in the brand's blue family; rotate through them by index
- * so a grid of many cards doesn't read as one flat repeated tile.
+ * Premium magnetic-tilt card: cursor-tracked 3D rotation (spring physics
+ * via useMagneticCard, never linear), a radial spotlight + top-edge
+ * reflection that track the pointer like polished glass, and depth-layered
+ * content (icon/eyebrow/title/body at increasing translateZ) so the tilt
+ * reads as real parallax. Neutral hairline border at rest — the electric-
+ * blue "edge light" only blooms in on hover, so the card stays understated
+ * until touched instead of glowing constantly.
+ *
+ * Perf note: the rotation-reactive shadow and the edge-light glow are both
+ * done with `filter: drop-shadow()`, not `box-shadow` — box-shadow forces a
+ * paint recalculation every frame, drop-shadow composites on the GPU
+ * alongside the transform. Everything animated here is transform, opacity,
+ * or filter — nothing that touches layout.
  */
-const BLUE_GRADIENTS = [
-  "linear-gradient(137deg, #22d3ee 0%, #3e77ac 55%, #123a5c 100%)",
-  "linear-gradient(137deg, #ffffff 0%, #7dd3fc 45%, #06b6d4 100%)",
-  "linear-gradient(137deg, #bae6fd 0%, #38bdf8 45%, #1d4ed8 100%)",
+const EDGE_LIGHT_RGB = ["125,211,252", "255,255,255", "56,189,248"];
+
+const PARTICLES = [
+  { top: "18%", left: "78%", size: 3, delay: "0s", duration: "8s" },
+  { top: "62%", left: "88%", size: 2, delay: "1.5s", duration: "10s" },
+  { top: "40%", left: "10%", size: 2, delay: "3s", duration: "9s" },
 ];
 
 export function HudCard({
@@ -45,7 +53,7 @@ export function HudCard({
   className?: string;
 }) {
   const variant = index ? parseInt(index, 10) - 1 : 0;
-  const gradient = BLUE_GRADIENTS[((variant % 3) + 3) % 3];
+  const edgeRgb = EDGE_LIGHT_RGB[((variant % 3) + 3) % 3];
   const { ref, active, springs, handlers } = useMagneticCard();
   const { rotateX, rotateY, posY, scale, spotX, spotY, glow } = springs;
 
@@ -58,7 +66,7 @@ export function HudCard({
       config={{ tension: 100, friction: 18 }}
       delayIn={delay}
       className={`h-full ${className}`}
-      style={{ perspective: 1200 }}
+      style={{ perspective: 1400 }}
     >
       <animated.div
         ref={ref}
@@ -71,58 +79,54 @@ export function HudCard({
               `translateY(${ty}px) scale(${s}) rotateX(${rx}deg) rotateY(${ry}deg)`,
           ),
           transformStyle: "preserve-3d",
-          willChange: active ? "transform" : "auto",
-          // Longer, softer shadow the further the card tilts; shrinks back
-          // to a resting contact-shadow at rest.
-          boxShadow: to(
-            [rotateX, rotateY, glow],
-            (rx, ry, g) =>
-              `${ry * 1.6}px ${8 - rx * 1.6}px ${24 + (Math.abs(rx) + Math.abs(ry)) * 1.6}px rgba(4,10,20,${0.35 + g * 0.25})`,
+          willChange: active ? "transform, filter" : "auto",
+          // Soft ambient contact-shadow at rest, lengthens and softens
+          // further with rotation — filter (not box-shadow) so it
+          // composites with the transform instead of forcing a repaint.
+          filter: to(
+            [rotateX, rotateY],
+            (rx, ry) =>
+              `drop-shadow(${ry * 1.3}px ${10 - rx * 1.1}px ${20 + (Math.abs(rx) + Math.abs(ry)) * 1.3}px rgba(2,6,14,0.35))`,
           ),
         }}
       >
-        {/* blurred ambient glow — rides along as part of the rigid card */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-[32px] opacity-50"
-          style={{ background: gradient, filter: "blur(40px)" }}
-        />
-
-        {/* animated border glow — brightens only while hovered/focused */}
+        {/* edge light — electric blue, hover-only, soft bloom */}
         <animated.div
           aria-hidden
-          className="pointer-events-none absolute -inset-px rounded-[32px]"
+          className="pointer-events-none absolute inset-0 rounded-[24px]"
           style={{
-            boxShadow: glow.to(
-              (g) => `0 0 ${g * 22}px rgba(125,211,252,${g * 0.45})`,
+            filter: glow.to(
+              (g) => `drop-shadow(0 0 ${g * 16}px rgba(${edgeRgb},${g * 0.45}))`,
             ),
           }}
         />
 
-        {/* gradient-border panel — the physical card surface */}
+        {/* card surface */}
         <div
-          className="relative z-10 flex h-full flex-col rounded-[32px] border-[6px] border-transparent p-6"
+          className="relative z-10 flex h-full flex-col rounded-[24px] border border-white/[0.08] p-6"
           style={{
-            background: `linear-gradient(var(--panel), var(--panel)) padding-box, ${gradient} border-box`,
+            background: image ? undefined : "var(--panel)",
             transformStyle: "preserve-3d",
           }}
         >
           {image && (
-            // Base plane, recessed behind the text (translateZ 0, everything
-            // else below is positive) — the source brief put the photo at
-            // the *highest* translateZ of any layer, which under
-            // preserve-3d renders it in front of the text instead of
-            // behind it. Kept the rest of its depth ordering (icon > title
-            // > body), just moved the photo to the back where a background
-            // image actually belongs.
+            // Base plane, recessed behind the text (translateZ 0 — every
+            // other layer below sits at a positive value). A literal
+            // reading of "highest translateZ of any layer" for the
+            // background would render it in front of the text under
+            // preserve-3d instead of behind it, so the image anchors the
+            // back of the stack and the rest keeps its relative ordering
+            // (icon > title > eyebrow > body).
             <animated.img
               aria-hidden
               src={image}
               alt=""
-              className="absolute inset-0 h-full w-full rounded-[26px] object-cover"
+              className="absolute inset-0 h-full w-full rounded-[24px] object-cover"
               style={{
-                transform: glow.to(
-                  (g) => `translateZ(0px) scale(${1 + g * 0.08})`,
+                transform: to(
+                  [spotX, spotY, glow],
+                  (x, y, g) =>
+                    `translateZ(0px) translate(${(50 - x) * 0.06 * g}px, ${(50 - y) * 0.06 * g}px) scale(${1 + g * 0.08})`,
                 ),
               }}
             />
@@ -130,39 +134,71 @@ export function HudCard({
           {image && (
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-0 rounded-[26px]"
+              className="pointer-events-none absolute inset-0 rounded-[24px]"
               style={{
                 background:
-                  "linear-gradient(180deg, rgba(11,26,46,0.25) 0%, rgba(11,26,46,0.55) 55%, rgba(11,26,46,0.92) 100%)",
+                  "linear-gradient(180deg, rgba(8,17,31,0.3) 0%, rgba(8,17,31,0.6) 55%, rgba(8,17,31,0.94) 100%)",
                 transform: "translateZ(1px)",
               }}
             />
           )}
 
+          {/* ambient particles — under 8% opacity, slow independent drift */}
+          {PARTICLES.map((p, i) => (
+            <span
+              key={i}
+              aria-hidden
+              className="animate-card-particle pointer-events-none absolute rounded-full bg-white"
+              style={{
+                top: p.top,
+                left: p.left,
+                width: p.size,
+                height: p.size,
+                opacity: 0.06,
+                animationDelay: p.delay,
+                animationDuration: p.duration,
+              }}
+            />
+          ))}
+
           {/* cursor-tracked spotlight — a reflection sheen, not a spotlight
               on the content: soft-light blend keeps it from washing out text */}
           <animated.div
             aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-[26px]"
+            className="pointer-events-none absolute inset-0 rounded-[24px]"
             style={{
               background: to(
                 [spotX, spotY],
                 (x, y) =>
                   `radial-gradient(circle at ${x}% ${y}%, rgba(255,255,255,0.9) 0%, rgba(125,211,252,0.4) 35%, transparent 70%)`,
               ),
-              opacity: glow.to((g) => g * 0.25),
+              opacity: glow.to((g) => g * 0.18),
               mixBlendMode: "soft-light",
+            }}
+          />
+
+          {/* micro-reflection — a thin highlight along the top edge that
+              slides with the cursor, like light catching brushed glass */}
+          <animated.div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-10 rounded-t-[24px]"
+            style={{
+              background: spotX.to(
+                (x) =>
+                  `linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) ${x}%, transparent 100%)`,
+              ),
+              opacity: glow.to((g) => g * 0.6),
             }}
           />
 
           <div
             className="relative flex items-start justify-between"
-            style={{ transform: "translateZ(40px)" }}
+            style={{ transform: "translateZ(45px)" }}
           >
             {icon && (
               <animated.div
                 className="text-white/90"
-                style={{ transform: "translateZ(60px)" }}
+                style={{ transform: "translateZ(70px)" }}
               >
                 {icon}
               </animated.div>
@@ -170,21 +206,14 @@ export function HudCard({
             {index && (
               <span
                 className="font-mono text-xs text-white/40"
-                style={{ transform: "translateZ(35px)" }}
+                style={{ transform: "translateZ(50px)" }}
               >
                 {index}
               </span>
             )}
           </div>
 
-          <animated.div
-            className="relative mt-auto pt-8"
-            style={{
-              transform: glow.to(
-                (g) => `translateZ(30px) translateY(${-3 * g}px)`,
-              ),
-            }}
-          >
+          <div className="relative mt-auto pt-8" style={{ transform: "translateZ(25px)" }}>
             {eyebrow && (
               <p className="text-xs uppercase tracking-[0.14em] text-[var(--cyan)]">
                 {eyebrow}
@@ -192,16 +221,26 @@ export function HudCard({
             )}
             {title && (
               <animated.p
-                className={`font-semibold text-white tracking-tight ${eyebrow ? "mt-1" : ""} text-lg`}
-                style={{ opacity: glow.to((g) => 0.9 + g * 0.1) }}
+                className={`font-semibold text-white ${eyebrow ? "mt-1" : ""} text-lg`}
+                style={{
+                  transform: glow.to((g) => `translateZ(60px) translateY(${-6 * g}px)`),
+                  opacity: glow.to((g) => 0.9 + g * 0.1),
+                  letterSpacing: glow.to((g) => `${g * 0.01}em`),
+                }}
               >
                 {title}
               </animated.p>
             )}
-            <p className="mt-2 text-sm leading-relaxed text-white/70 selection:bg-white/20">
+            <animated.p
+              className="mt-2 text-sm leading-relaxed text-white/70 selection:bg-white/20"
+              style={{
+                transform: glow.to((g) => `translateY(${-3 * g}px)`),
+                opacity: glow.to((g) => 0.7 + g * 0.1),
+              }}
+            >
               {body}
-            </p>
-          </animated.div>
+            </animated.p>
+          </div>
         </div>
       </animated.div>
     </Inview>

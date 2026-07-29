@@ -145,7 +145,8 @@ export function ContactoSection() {
               <button
                 type="submit"
                 disabled={status === "submitting"}
-                className="w-full rounded-full bg-[var(--ember)] px-6 py-3 text-sm font-semibold text-[var(--ink)] shadow-lg shadow-black/10 transition-opacity duration-[var(--duration-fast)] ease-entrance disabled:opacity-60"
+                className="w-full rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-black/20 transition-opacity duration-[var(--duration-fast)] ease-entrance disabled:opacity-60"
+                style={{ background: "var(--gradient-cta)" }}
               >
                 {status === "submitting" ? "Enviando…" : "Enviar mensaje"}
               </button>

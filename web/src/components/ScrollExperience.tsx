@@ -397,9 +397,10 @@ function ActContent({
               href={c.href}
               className={
                 i === 0
-                  ? "rounded-full bg-[var(--ember)] px-6 py-3 text-sm font-semibold text-[var(--ink)] shadow-lg shadow-black/30"
+                  ? "rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-black/30"
                   : "rounded-full border border-white/40 bg-black/30 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-black/50"
               }
+              style={i === 0 ? { background: "var(--gradient-cta)" } : undefined}
             >
               {c.label}
             </a>
