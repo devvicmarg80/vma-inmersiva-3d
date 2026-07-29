@@ -5,6 +5,7 @@ import { identity, strategicAreas, coreValues } from "@/content/company";
 import { ContactoSection } from "@/components/sections/ContactoSection";
 import { SiteFooter } from "@/components/sections/SiteFooter";
 import { HudCard } from "@/components/common/HudCard";
+import { HeroGlobeBackdrop } from "@/components/common/HeroGlobeBackdrop";
 
 export const metadata: Metadata = {
   title: "Nosotros · VMA",
@@ -15,8 +16,9 @@ export const metadata: Metadata = {
 export default function NosotrosPage() {
   return (
     <main className="bg-[var(--ink)] pt-28">
-      <section className="scroll-mt-24 px-6 py-16 md:py-20">
-        <div className="mx-auto max-w-3xl">
+      <section className="relative flex min-h-[560px] scroll-mt-24 items-center overflow-hidden px-6 py-16 md:min-h-[640px] md:py-20">
+        <HeroGlobeBackdrop />
+        <div className="relative z-10 mx-auto max-w-3xl">
           <SectionHeading eyebrow="Quiénes somos">
             Desarrollo con propósito.
           </SectionHeading>

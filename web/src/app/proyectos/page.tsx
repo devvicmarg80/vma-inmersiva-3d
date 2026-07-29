@@ -14,6 +14,7 @@ import { ContactoSection } from "@/components/sections/ContactoSection";
 import { SiteFooter } from "@/components/sections/SiteFooter";
 import { HudCard } from "@/components/common/HudCard";
 import { CountUpStat } from "@/components/common/CountUpStat";
+import { HeroGlobeBackdrop } from "@/components/common/HeroGlobeBackdrop";
 
 export const metadata: Metadata = {
   title: "Proyectos e impacto · VMA",
@@ -59,8 +60,9 @@ export default function ProyectosPage() {
 
   return (
     <main className="bg-[var(--ink)] pt-28">
-      <section className="scroll-mt-24 px-6 py-16 md:py-20">
-        <div className="mx-auto max-w-3xl">
+      <section className="relative flex min-h-[560px] scroll-mt-24 items-center overflow-hidden px-6 py-16 md:min-h-[640px] md:py-20">
+        <HeroGlobeBackdrop />
+        <div className="relative z-10 mx-auto max-w-3xl">
           <SectionHeading eyebrow="Proyectos e impacto">
             De la alianza a la ejecución.
           </SectionHeading>

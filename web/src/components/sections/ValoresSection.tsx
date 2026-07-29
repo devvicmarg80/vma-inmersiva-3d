@@ -1,8 +1,6 @@
-"use client";
-
-import { Inview } from "@/components/animation/springs/in-view";
 import { SectionHeading } from "./SectionHeading";
 import { coreValues } from "@/content/company";
+import { HudCard } from "@/components/common/HudCard";
 
 export function ValoresSection() {
   return (
@@ -20,23 +18,14 @@ export function ValoresSection() {
 
         <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {coreValues.map((value, i) => (
-            <Inview
+            <HudCard
               key={value.title}
-              tag="div"
-              from={{ opacity: 0, x: -90 }}
-              to={{ opacity: 1, x: 0 }}
-              mode="always"
-              delayIn={i * 150}
-              config={{ tension: 120, friction: 26 }}
-              className="rounded-lg border border-[var(--rule)] bg-[var(--paper-raised)] p-6"
-            >
-              <p className="text-base font-semibold text-[var(--ink)]">
-                {value.title}
-              </p>
-              <p className="mt-2 text-sm text-[var(--ink-soft)]">
-                {value.body}
-              </p>
-            </Inview>
+              index={String(i + 1).padStart(2, "0")}
+              icon={<value.icon size={28} strokeWidth={2.5} />}
+              title={value.title}
+              body={value.body}
+              delay={i * 80}
+            />
           ))}
         </div>
       </div>
