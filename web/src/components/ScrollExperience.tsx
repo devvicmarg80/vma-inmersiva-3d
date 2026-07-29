@@ -149,12 +149,26 @@ export default function ScrollExperience() {
     let raf = 0;
     let dirty = true;
 
+    // Scroll position is a target, not a direct time-map — without this,
+    // scrolling 2x faster made the video visibly play 2x faster (scroll
+    // speed *was* playback speed, 1:1). displayedTime instead eases toward
+    // whatever time the current scroll position implies, capped at
+    // MAX_RATE video-seconds per real second in either direction, so the
+    // video always reads as playing at roughly one constant pace —
+    // scrolling fast just means it plays at that pace until it catches up,
+    // rather than visibly speeding through the footage.
+    const MAX_RATE = 2.2;
+    let displayedTime = 0;
+    let lastTickAt = 0;
+
     const onScroll = () => {
       dirty = true;
     };
 
-    const tick = () => {
+    const tick = (now: number) => {
       raf = requestAnimationFrame(tick);
+      const dt = lastTickAt ? Math.min(0.1, (now - lastTickAt) / 1000) : 0;
+      lastTickAt = now;
       if (!dirty) return;
 
       const track = trackRef.current;
@@ -177,11 +191,15 @@ export default function ScrollExperience() {
         if (video.seeking) {
           return;
         }
-        video.currentTime = progress * video.duration;
+        const targetTime = progress * video.duration;
+        const maxStep = MAX_RATE * dt;
+        const diff = targetTime - displayedTime;
+        displayedTime += Math.max(-maxStep, Math.min(maxStep, diff));
+        video.currentTime = displayedTime;
       }
       dirty = false;
 
-      const p = progress * ACT_COUNT;
+      const p = (displayedTime / (video?.duration || 1)) * ACT_COUNT;
       const next = acts.map((_, i) => actOpacity(p, i));
       setActiveStyles(next);
     };
