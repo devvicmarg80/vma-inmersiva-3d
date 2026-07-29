@@ -14,18 +14,20 @@ const roboto = Roboto({
 
 // Titulares: geométrica y expresiva — trazo técnico/orbital que combina con
 // el lenguaje visual del globo y las secciones cósmicas — ver --display en
-// globals.css.
+// globals.css. Solo peso 700: es el único que se usa (h1-h3 y font-bold en
+// globals.css/proyectos) — pedir más pesos solo infla el preload de fuentes.
 const unbounded = Unbounded({
   subsets: ["latin"],
-  weight: ["500", "600", "700", "900"],
+  weight: ["700"],
   variable: "--font-unbounded",
 });
 
 // Voz "de datos": eyebrows, índices numerados, cifras de impacto — ver
-// --mono en globals.css.
+// --mono en globals.css. Solo peso 400: ningún uso actual pide semibold/bold
+// en mono.
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  weight: ["400"],
   variable: "--font-jetbrains-mono",
 });
 
