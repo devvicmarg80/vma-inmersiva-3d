@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Roboto, Space_Grotesk } from "next/font/google";
+import { Roboto, Unbounded, JetBrains_Mono } from "next/font/google";
 import { AdaptiveGrid } from "@/components/common/grid";
 import { ReducedMotion } from "@/components/common/reduced-motion";
 import { ScrollLayout } from "@/layouts/scroll-layout";
@@ -12,12 +12,21 @@ const roboto = Roboto({
   variable: "--font-roboto",
 });
 
-// Titulares: geométrica y dinámica, contraste deliberado con el cuerpo en
-// Roboto — ver --display en globals.css.
-const spaceGrotesk = Space_Grotesk({
+// Titulares: geométrica y expresiva — trazo técnico/orbital que combina con
+// el lenguaje visual del globo y las secciones cósmicas — ver --display en
+// globals.css.
+const unbounded = Unbounded({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-space-grotesk",
+  weight: ["500", "600", "700", "900"],
+  variable: "--font-unbounded",
+});
+
+// Voz "de datos": eyebrows, índices numerados, cifras de impacto — ver
+// --mono en globals.css.
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  variable: "--font-jetbrains-mono",
 });
 
 export const metadata: Metadata = {
@@ -34,7 +43,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`h-full antialiased ${roboto.variable} ${spaceGrotesk.variable}`}
+      className={`h-full antialiased ${roboto.variable} ${unbounded.variable} ${jetbrainsMono.variable}`}
     >
       <body className="min-h-full">
         <ScrollLayout>

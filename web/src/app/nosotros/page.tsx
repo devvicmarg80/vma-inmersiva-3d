@@ -3,6 +3,7 @@ import { SectionHeading } from "@/components/sections/SectionHeading";
 import { identity, strategicAreas, coreValues } from "@/content/company";
 import { ContactoSection } from "@/components/sections/ContactoSection";
 import { SiteFooter } from "@/components/sections/SiteFooter";
+import { HudCard } from "@/components/common/HudCard";
 
 export const metadata: Metadata = {
   title: "Nosotros · VMA",
@@ -30,30 +31,13 @@ export default function NosotrosPage() {
 
       <section className="scroll-mt-24 px-6 py-12 md:py-16">
         <div className="mx-auto grid max-w-5xl gap-4 sm:grid-cols-3">
-          <div className="rounded-lg border border-white/10 bg-white/[0.03] p-6">
-            <p className="text-xs uppercase tracking-[0.14em] text-[var(--ember)]">
-              Propósito superior
-            </p>
-            <p className="mt-3 text-sm leading-relaxed text-white/80">
-              {identity.proposito}
-            </p>
-          </div>
-          <div className="rounded-lg border border-white/10 bg-white/[0.03] p-6">
-            <p className="text-xs uppercase tracking-[0.14em] text-[var(--ember)]">
-              Misión
-            </p>
-            <p className="mt-3 text-sm leading-relaxed text-white/80">
-              {identity.mision}
-            </p>
-          </div>
-          <div className="rounded-lg border border-white/10 bg-white/[0.03] p-6">
-            <p className="text-xs uppercase tracking-[0.14em] text-[var(--ember)]">
-              Visión
-            </p>
-            <p className="mt-3 text-sm leading-relaxed text-white/80">
-              {identity.vision}
-            </p>
-          </div>
+          <HudCard
+            index="01"
+            title="Propósito superior"
+            body={identity.proposito}
+          />
+          <HudCard index="02" title="Misión" body={identity.mision} />
+          <HudCard index="03" title="Visión" body={identity.vision} />
         </div>
       </section>
 
@@ -89,16 +73,13 @@ export default function NosotrosPage() {
             Valores corporativos.
           </SectionHeading>
           <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {coreValues.map((value) => (
-              <div
+            {coreValues.map((value, i) => (
+              <HudCard
                 key={value.title}
-                className="rounded-lg border border-white/10 bg-white/[0.03] p-6"
-              >
-                <p className="text-base font-semibold text-white">
-                  {value.title}
-                </p>
-                <p className="mt-2 text-sm text-white/70">{value.body}</p>
-              </div>
+                index={String(i + 1).padStart(2, "0")}
+                title={value.title}
+                body={value.body}
+              />
             ))}
           </div>
         </div>

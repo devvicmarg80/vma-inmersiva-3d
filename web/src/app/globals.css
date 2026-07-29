@@ -52,10 +52,17 @@
   --sans: var(--font-roboto), -apple-system, BlinkMacSystemFont, "Segoe UI",
     Helvetica, Arial, sans-serif;
 
-  /* Titulares — Space Grotesk sobre el cuerpo en Roboto: geométrica y algo
-     técnica sin caer en lo puramente decorativo, pensada solo para h1-h3 y
-     TextEngine (SectionHeading), nunca para párrafos ni eyebrows. */
-  --display: var(--font-space-grotesk), var(--sans);
+  /* Titulares — Unbounded sobre el cuerpo en Roboto: trazo geométrico
+     expresivo, con el peso orbital/técnico que conecta con el globo y las
+     secciones cósmicas del home. Solo para h1-h3 y TextEngine
+     (SectionHeading), nunca para párrafos ni eyebrows. */
+  --display: var(--font-unbounded), var(--sans);
+
+  /* Voz "de datos" — eyebrows, índices numerados (01/02), cifras de
+     impacto. Separada del --display para que la jerarquía tipográfica
+     tenga tres registros en vez de dos: display / cuerpo / dato. */
+  --mono: var(--font-jetbrains-mono), ui-monospace, "SFMono-Regular", Menlo,
+    monospace;
 }
 
 /* ---------------------------------------------------------------------------
@@ -78,6 +85,7 @@
   --color-cyan: var(--cyan);
   --font-sans: var(--sans);
   --font-display: var(--display);
+  --font-mono: var(--mono);
 
   /* Leading floor for clipped TextEngine reveals — see
      obsidian/frontend/text-engine.md → "Alignment & line-height" in the

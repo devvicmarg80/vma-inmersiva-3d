@@ -4,6 +4,8 @@ import { strategicAreas } from "@/content/company";
 import { acts } from "@/content/copy";
 import { ContactoSection } from "@/components/sections/ContactoSection";
 import { SiteFooter } from "@/components/sections/SiteFooter";
+import { HudCard } from "@/components/common/HudCard";
+import { CountUpStat } from "@/components/common/CountUpStat";
 
 export const metadata: Metadata = {
   title: "Proyectos e impacto · VMA",
@@ -90,8 +92,8 @@ export default function ProyectosPage() {
             <dl className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-4">
               {impact.stats.map((stat) => (
                 <div key={stat.label}>
-                  <dd className="text-3xl font-bold tabular-nums text-[var(--ember)] md:text-4xl">
-                    {stat.value}
+                  <dd className="font-display text-3xl font-bold text-[var(--ember)] md:text-4xl">
+                    <CountUpStat value={stat.value} />
                   </dd>
                   <dt className="mt-2 text-sm text-white/70">{stat.label}</dt>
                 </div>
@@ -107,16 +109,13 @@ export default function ProyectosPage() {
             Cómo medimos el impacto.
           </SectionHeading>
           <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {kpiCategories.map((kpi) => (
-              <div
+            {kpiCategories.map((kpi, i) => (
+              <HudCard
                 key={kpi.label}
-                className="rounded-lg border border-white/10 bg-white/[0.03] p-6"
-              >
-                <p className="text-base font-semibold text-white">
-                  {kpi.label}
-                </p>
-                <p className="mt-2 text-sm text-white/70">{kpi.body}</p>
-              </div>
+                index={String(i + 1).padStart(2, "0")}
+                title={kpi.label}
+                body={kpi.body}
+              />
             ))}
           </div>
         </div>

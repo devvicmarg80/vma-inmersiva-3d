@@ -34,7 +34,7 @@ export function SectionHeading({
         <Inview
           tag="p"
           from={{ opacity: 0, x: -90 }}
-          to={{ opacity: 1, y: 0 }}
+          to={{ opacity: 1, x: 0 }}
           mode="once"
           config={{ tension: 210, friction: 22 }}
           className={`mb-3 inline-block rounded-full bg-[var(--ink)] px-3 py-1 text-sm uppercase tracking-[0.14em] text-[var(--ember)] ${
@@ -61,7 +61,7 @@ export function SectionHeading({
         <Inview
           tag="p"
           from={{ opacity: 0, x: -90 }}
-          to={{ opacity: 1, y: 0 }}
+          to={{ opacity: 1, x: 0 }}
           mode="once"
           delayIn={200}
           config={{ tension: 190, friction: 24 }}
