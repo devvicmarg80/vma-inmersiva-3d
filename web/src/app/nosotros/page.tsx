@@ -37,12 +37,14 @@ export default function NosotrosPage() {
           <HudCard
             index="01"
             icon={<Target size={28} strokeWidth={2.5} />}
+            image="/img/cards/proposito.jpg"
             title="Propósito superior"
             body={identity.proposito}
           />
           <HudCard
             index="02"
             icon={<Compass size={28} strokeWidth={2.5} />}
+            image="/img/cards/mision.jpg"
             title="Misión"
             body={identity.mision}
             delay={80}
@@ -50,6 +52,7 @@ export default function NosotrosPage() {
           <HudCard
             index="03"
             icon={<Eye size={28} strokeWidth={2.5} />}
+            image="/img/cards/vision.jpg"
             title="Visión"
             body={identity.vision}
             delay={160}
@@ -94,6 +97,7 @@ export default function NosotrosPage() {
                 key={value.title}
                 index={String(i + 1).padStart(2, "0")}
                 icon={<value.icon size={28} strokeWidth={2.5} />}
+                image={value.image}
                 title={value.title}
                 body={value.body}
                 delay={i * 80}

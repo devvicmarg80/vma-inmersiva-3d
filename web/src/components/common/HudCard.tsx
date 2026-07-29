@@ -23,6 +23,7 @@ const BLUE_GRADIENTS = [
 export function HudCard({
   index,
   icon,
+  image,
   eyebrow,
   title,
   body,
@@ -34,6 +35,9 @@ export function HudCard({
   // not a component reference — the callers are Server Components and RSC
   // can't serialize a bare function across into this Client Component.
   icon?: ReactNode;
+  /** Path under /public — plain <img>, not next/image (see SiteHeader.tsx: the
+   * image optimizer's cache writes come back corrupted on this filesystem). */
+  image?: string;
   eyebrow?: string;
   title?: string;
   body: string;
@@ -103,6 +107,38 @@ export function HudCard({
             transformStyle: "preserve-3d",
           }}
         >
+          {image && (
+            // Base plane, recessed behind the text (translateZ 0, everything
+            // else below is positive) — the source brief put the photo at
+            // the *highest* translateZ of any layer, which under
+            // preserve-3d renders it in front of the text instead of
+            // behind it. Kept the rest of its depth ordering (icon > title
+            // > body), just moved the photo to the back where a background
+            // image actually belongs.
+            <animated.img
+              aria-hidden
+              src={image}
+              alt=""
+              className="absolute inset-0 h-full w-full rounded-[26px] object-cover"
+              style={{
+                transform: glow.to(
+                  (g) => `translateZ(0px) scale(${1 + g * 0.08})`,
+                ),
+              }}
+            />
+          )}
+          {image && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 rounded-[26px]"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(11,26,46,0.25) 0%, rgba(11,26,46,0.55) 55%, rgba(11,26,46,0.92) 100%)",
+                transform: "translateZ(1px)",
+              }}
+            />
+          )}
+
           {/* cursor-tracked spotlight — a reflection sheen, not a spotlight
               on the content: soft-light blend keeps it from washing out text */}
           <animated.div

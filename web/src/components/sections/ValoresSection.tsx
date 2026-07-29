@@ -22,6 +22,7 @@ export function ValoresSection() {
               key={value.title}
               index={String(i + 1).padStart(2, "0")}
               icon={<value.icon size={28} strokeWidth={2.5} />}
+              image={value.image}
               title={value.title}
               body={value.body}
               delay={i * 80}

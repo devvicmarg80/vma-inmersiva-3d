@@ -27,31 +27,37 @@ const kpiCategories = [
     label: "Impacto en educación",
     body: "Número de personas capacitadas en programas de formación.",
     icon: GraduationCap,
+    image: "/img/cards/educacion.jpg",
   },
   {
     label: "Infraestructura y obras",
     body: "Proyectos ejecutados en telecomunicaciones, vías y espacios comunitarios.",
     icon: HardHat,
+    image: "/img/cards/infraestructura.jpg",
   },
   {
     label: "Alcance tecnológico",
     body: "Comunidades con acceso a TIC y medios digitales.",
     icon: Wifi,
+    image: "/img/cards/tecnologico.jpg",
   },
   {
     label: "Sostenibilidad ambiental",
     body: "Reducción de impacto y adopción de energías renovables.",
     icon: Leaf,
+    image: "/img/cards/sostenibilidad-ambiental.jpg",
   },
   {
     label: "Participación comunitaria",
     body: "Líderes formados y programas de empoderamiento.",
     icon: Users,
+    image: "/img/cards/participacion.jpg",
   },
   {
     label: "Transparencia y auditoría",
     body: "Evaluación del uso de recursos y efectividad de los programas.",
     icon: ShieldCheck,
+    image: "/img/cards/auditoria.jpg",
   },
 ];
 
@@ -130,6 +136,7 @@ export default function ProyectosPage() {
                 key={kpi.label}
                 index={String(i + 1).padStart(2, "0")}
                 icon={<kpi.icon size={28} strokeWidth={2.5} />}
+                image={kpi.image}
                 title={kpi.label}
                 body={kpi.body}
                 delay={i * 80}

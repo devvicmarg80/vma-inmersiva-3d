@@ -64,6 +64,7 @@ export type CoreValue = {
   title: string;
   body: string;
   icon: LucideIcon;
+  image: string;
 };
 
 export const coreValues: CoreValue[] = [
@@ -71,35 +72,42 @@ export const coreValues: CoreValue[] = [
     title: "Innovación",
     body: "Soluciones creativas para transformar comunidades.",
     icon: Lightbulb,
+    image: "/img/cards/innovacion.jpg",
   },
   {
     title: "Compromiso social",
     body: "Trabajamos por el bienestar de las personas y su entorno.",
     icon: HeartHandshake,
+    image: "/img/cards/compromiso-social.jpg",
   },
   {
     title: "Sostenibilidad",
     body: "Desarrollo a largo plazo, respetando el medio ambiente.",
     icon: Leaf,
+    image: "/img/cards/sostenibilidad.jpg",
   },
   {
     title: "Inclusión",
     body: "Oportunidades para todos, sin distinción.",
     icon: Users,
+    image: "/img/cards/inclusion.jpg",
   },
   {
     title: "Transparencia",
     body: "Ética y responsabilidad en cada acción.",
     icon: ShieldCheck,
+    image: "/img/cards/transparencia.jpg",
   },
   {
     title: "Colaboración",
     body: "Redes con actores estratégicos para maximizar el impacto.",
     icon: Handshake,
+    image: "/img/cards/colaboracion.jpg",
   },
   {
     title: "Responsabilidad social empresarial",
     body: "Prácticas sostenibles y éticas en cada iniciativa.",
     icon: Building2,
+    image: "/img/cards/rse.jpg",
   },
 ];
