@@ -82,6 +82,57 @@ export default function ScrollExperience() {
   }, []);
 
   useEffect(() => {
+    // Native progressive streaming (preload="auto") paces itself against
+    // playback rate, not scroll speed — a fast scroll can seek well past
+    // whatever's downloaded so far, and the browser then has to pause and
+    // wait for that byte range before the seek resolves. That stall is
+    // exactly what reads as "no tiene un tiempo adecuado de ejecucion."
+    //
+    // A prior version of this file fetched the whole file up front and
+    // *blocked scroll* until it finished (see git history) — reverted
+    // because that hurt initial load/SEO more than scrub smoothness was
+    // worth. This is the same fetch-to-blob idea done the other way:
+    // starts immediately in the background, never blocks anything, and
+    // once it resolves (mid-size video, well under the time it takes to
+    // actually scroll through 34s of content at a normal pace) every
+    // subsequent seek is a pure local decode with zero network dependency
+    // — fast scrolling can't outrun it anymore. If the fetch is slow or
+    // fails, the native src keeps working exactly as it does today; this
+    // is pure upside, never a hard dependency.
+    if (reducedMotion) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    let cancelled = false;
+    let objectUrl: string | null = null;
+
+    fetch(video.currentSrc || video.src)
+      .then((res) => {
+        if (!res.ok) throw new Error(`video fetch failed: ${res.status}`);
+        return res.blob();
+      })
+      .then((blob) => {
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(blob);
+        const resumeAt = video.currentTime;
+        const onLoaded = () => {
+          video.currentTime = resumeAt;
+          video.removeEventListener("loadedmetadata", onLoaded);
+        };
+        video.addEventListener("loadedmetadata", onLoaded);
+        video.src = objectUrl;
+      })
+      .catch(() => {
+        // Swallow — the video already works via the native src regardless.
+      });
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [reducedMotion]);
+
+  useEffect(() => {
     // Scroll is never gated on the video anymore (forcing a full download
     // before letting the page respond hurt load performance/SEO more than
     // scrub smoothness was worth) — the browser streams it progressively via
