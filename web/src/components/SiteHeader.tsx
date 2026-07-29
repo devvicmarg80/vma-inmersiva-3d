@@ -22,6 +22,17 @@ export default function SiteHeader() {
     setOpen(false);
   }, [pathname]);
 
+  // Without this the page behind the open mobile sheet still scrolls —
+  // easy to do by accident while trying to tap a link.
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
+  const onContactPage = pathname === "/contacto";
+
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[var(--ink)]/60 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
@@ -67,13 +78,17 @@ export default function SiteHeader() {
           })}
         </nav>
 
-        <Link
-          href="/contacto"
-          className="hidden rounded-full px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-black/20 transition-opacity duration-[var(--duration-fast)] ease-entrance hover:opacity-90 md:inline-block"
-          style={{ background: "var(--gradient-cta)" }}
-        >
-          Invertir en VMA
-        </Link>
+        {/* Pointing "Invertir en VMA" at /contacto is a no-op on /contacto
+            itself — the form is already right there. */}
+        {!onContactPage && (
+          <Link
+            href="/contacto"
+            className="hidden rounded-full px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-black/20 transition-opacity duration-[var(--duration-fast)] ease-entrance hover:opacity-90 md:inline-block"
+            style={{ background: "var(--gradient-cta)" }}
+          >
+            Invertir en VMA
+          </Link>
+        )}
 
         <button
           type="button"
@@ -118,13 +133,15 @@ export default function SiteHeader() {
                 </Link>
               );
             })}
-            <Link
-              href="/contacto"
-              className="mt-2 rounded-full px-5 py-2.5 text-center text-sm font-semibold text-white"
-              style={{ background: "var(--gradient-cta)" }}
-            >
-              Invertir en VMA
-            </Link>
+            {!onContactPage && (
+              <Link
+                href="/contacto"
+                className="mt-2 rounded-full px-5 py-2.5 text-center text-sm font-semibold text-white"
+                style={{ background: "var(--gradient-cta)" }}
+              >
+                Invertir en VMA
+              </Link>
+            )}
           </div>
         </Spring>
       )}

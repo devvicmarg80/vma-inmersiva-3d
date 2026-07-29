@@ -1,17 +1,18 @@
-import type { Metadata } from "next";
 import { Target, Compass, Eye } from "lucide-react";
 import { SectionHeading } from "@/components/sections/SectionHeading";
-import { identity, strategicAreas, coreValues } from "@/content/company";
+import { identity, coreValues } from "@/content/company";
 import { ContactoSection } from "@/components/sections/ContactoSection";
 import { SiteFooter } from "@/components/sections/SiteFooter";
 import { HudCard } from "@/components/common/HudCard";
 import { HeroGlobeBackdrop } from "@/components/common/HeroGlobeBackdrop";
+import { StrategicAreasList } from "@/components/common/StrategicAreasList";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Nosotros · VMA",
   description:
     "Misión, visión y valores de VMA Grupo Empresarial de Desarrollo e Innovación S.A.S.",
-};
+});
 
 export default function NosotrosPage() {
   return (
@@ -19,7 +20,7 @@ export default function NosotrosPage() {
       <section className="relative flex min-h-[560px] scroll-mt-24 items-center overflow-hidden px-6 py-16 md:min-h-[640px] md:py-20">
         <HeroGlobeBackdrop />
         <div className="relative z-10 mx-auto max-w-3xl">
-          <SectionHeading eyebrow="Quiénes somos">
+          <SectionHeading eyebrow="Quiénes somos" level="h1">
             Desarrollo con propósito.
           </SectionHeading>
           <p className="mt-6 max-w-2xl text-white/80">
@@ -65,24 +66,7 @@ export default function NosotrosPage() {
           <SectionHeading eyebrow="Cómo trabajamos">
             Cinco frentes, un mismo territorio.
           </SectionHeading>
-          <div className="mt-10 divide-y divide-white/10 border-y border-white/10">
-            {strategicAreas.map((area, i) => (
-              <div
-                key={area.label}
-                className="flex flex-col gap-2 py-6 sm:flex-row sm:items-baseline sm:gap-8"
-              >
-                <span className="shrink-0 font-mono text-sm text-[var(--cyan)]">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <div>
-                  <p className="text-base font-semibold text-white">
-                    {area.label}
-                  </p>
-                  <p className="mt-1 text-sm text-white/70">{area.body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <StrategicAreasList />
         </div>
       </section>
 

@@ -31,10 +31,32 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
 });
 
+const title = "VMA · Innovación y Desarrollo";
+const description =
+  "VMA Grupo Empresarial de Desarrollo e Innovación Internacional S.A.S. impulsa proyectos de educación, infraestructura, tecnología y sostenibilidad en Colombia y América Latina.";
+
 export const metadata: Metadata = {
-  title: "VMA · Innovación y Desarrollo",
-  description:
-    "VMA Grupo Empresarial de Desarrollo e Innovación Internacional S.A.S. impulsa proyectos de educación, infraestructura, tecnología y sostenibilidad en Colombia y América Latina.",
+  // Without this, Next.js can't resolve the openGraph image below (or any
+  // page's) into an absolute URL — link previews on WhatsApp/LinkedIn
+  // silently show no image instead of erroring, which is why this was easy
+  // to miss.
+  metadataBase: new URL("https://vma-inmersiva-3d.grupoempresarialvicmarg.com"),
+  title,
+  description,
+  openGraph: {
+    title,
+    description,
+    siteName: "VMA · Innovación y Desarrollo",
+    locale: "es_CO",
+    type: "website",
+    images: [{ url: "/img/og-image.jpg", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: ["/img/og-image.jpg"],
+  },
 };
 
 export default function RootLayout({

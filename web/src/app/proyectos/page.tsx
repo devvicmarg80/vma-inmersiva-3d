@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import {
   GraduationCap,
   HardHat,
@@ -8,19 +7,20 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { SectionHeading } from "@/components/sections/SectionHeading";
-import { strategicAreas } from "@/content/company";
 import { acts } from "@/content/copy";
 import { ContactoSection } from "@/components/sections/ContactoSection";
 import { SiteFooter } from "@/components/sections/SiteFooter";
 import { HudCard } from "@/components/common/HudCard";
 import { CountUpStat } from "@/components/common/CountUpStat";
 import { HeroGlobeBackdrop } from "@/components/common/HeroGlobeBackdrop";
+import { StrategicAreasList } from "@/components/common/StrategicAreasList";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Proyectos e impacto · VMA",
   description:
     "Cómo trabaja VMA — alianzas, áreas de acción y cómo medimos el impacto en Colombia y América Latina.",
-};
+});
 
 const kpiCategories = [
   {
@@ -69,7 +69,7 @@ export default function ProyectosPage() {
       <section className="relative flex min-h-[560px] scroll-mt-24 items-center overflow-hidden px-6 py-16 md:min-h-[640px] md:py-20">
         <HeroGlobeBackdrop />
         <div className="relative z-10 mx-auto max-w-3xl">
-          <SectionHeading eyebrow="Proyectos e impacto">
+          <SectionHeading eyebrow="Proyectos e impacto" level="h1">
             De la alianza a la ejecución.
           </SectionHeading>
           <p className="mt-6 max-w-2xl text-white/80">
@@ -86,24 +86,7 @@ export default function ProyectosPage() {
           <p className="text-xs uppercase tracking-[0.14em] text-[var(--cyan)]">
             Áreas de acción
           </p>
-          <div className="mt-6 divide-y divide-white/10 border-y border-white/10">
-            {strategicAreas.map((area, i) => (
-              <div
-                key={area.label}
-                className="flex flex-col gap-2 py-6 sm:flex-row sm:items-baseline sm:gap-8"
-              >
-                <span className="shrink-0 font-mono text-sm text-[var(--cyan)]">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <div>
-                  <p className="text-base font-semibold text-white">
-                    {area.label}
-                  </p>
-                  <p className="mt-1 text-sm text-white/70">{area.body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <StrategicAreasList className="mt-6" />
         </div>
       </section>
 

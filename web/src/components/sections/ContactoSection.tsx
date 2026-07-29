@@ -10,7 +10,16 @@ type Status = "idle" | "submitting" | "success" | "error";
 const inputClass =
   "w-full rounded-md border border-[var(--rule)] bg-[var(--paper-raised)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition-colors duration-[var(--duration-fast)] ease-entrance focus:border-[var(--cyan)]";
 
-export function ContactoSection() {
+export function ContactoSection({
+  headingLevel = "h2",
+}: {
+  /** ContactoSection is embedded as a secondary section on Home, Nosotros
+   * and Proyectos (which already have their own h1) — but it's also
+   * rendered standalone on /contacto, where it needs to *be* the page's
+   * h1. Defaults to h2 so the three embedded call sites don't need to
+   * change. */
+  headingLevel?: "h1" | "h2";
+} = {}) {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -56,6 +65,7 @@ export function ContactoSection() {
         <SectionHeading
           eyebrow="Contacto"
           align="center"
+          level={headingLevel}
           description="Cuéntanos si buscas invertir en VMA o convertirte en aliado estratégico — un miembro del equipo te responde directamente."
         >
           Hablemos.

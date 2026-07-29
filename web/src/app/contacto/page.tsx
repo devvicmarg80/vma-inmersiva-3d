@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
 import { ContactoSection } from "@/components/sections/ContactoSection";
 import { SiteFooter } from "@/components/sections/SiteFooter";
 import { HeroGlobeBackdrop } from "@/components/common/HeroGlobeBackdrop";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Contacto · VMA",
   description:
     "Escríbenos si buscas invertir en VMA o convertirte en aliado estratégico.",
-};
+});
 
 export default function ContactoPage() {
   return (
@@ -15,7 +15,7 @@ export default function ContactoPage() {
       <div className="relative flex-1 overflow-hidden">
         <HeroGlobeBackdrop />
         <div className="relative z-10">
-          <ContactoSection />
+          <ContactoSection headingLevel="h1" />
         </div>
       </div>
       <SiteFooter />

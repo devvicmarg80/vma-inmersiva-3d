@@ -28,12 +28,19 @@ export function SectionHeading({
   description,
   align = "left",
   className = "",
+  level = "h2",
 }: {
   eyebrow?: string;
   children: string;
   description?: string;
   align?: "left" | "center";
   className?: string;
+  /** Every route needs exactly one <h1> — defaults to h2 (this component's
+   * original, and still most common, use: a mid-page section heading).
+   * Pass "h1" only for the single heading a given page actually leads
+   * with (see ScrollExperience's ActContent for the same pattern on the
+   * scroll-jacked video hero). */
+  level?: "h1" | "h2";
 }) {
   const alignClass =
     align === "center" ? "text-center justify-center" : "text-left justify-start";
@@ -74,7 +81,7 @@ export function SectionHeading({
         to={{ y: -35 }}
       >
         <TextEngine
-          tag="h2"
+          tag={level}
           mode="once"
           start="top bottom-=120"
           className={`leading-display font-bold text-3xl md:text-5xl text-[var(--cyan)] ${alignClass} ${className}`}
