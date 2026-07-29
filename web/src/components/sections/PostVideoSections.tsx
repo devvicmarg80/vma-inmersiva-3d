@@ -95,7 +95,15 @@ export function PostVideoSections() {
             backgroundPosition: "center",
           }}
         >
-          <p className="max-w-sm text-center text-sm uppercase tracking-[0.18em] text-white/70">
+          <p
+            className="font-display max-w-3xl text-center text-3xl font-bold uppercase tracking-[0.08em] md:text-5xl"
+            style={{
+              background: "var(--gradient-cta)",
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              color: "transparent",
+            }}
+          >
             Del origen a la ejecución
           </p>
           <p className="font-display max-w-xl text-balance text-center text-2xl font-bold text-white md:text-4xl">

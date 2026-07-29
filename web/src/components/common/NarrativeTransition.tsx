@@ -118,10 +118,25 @@ export function NarrativeTransition({
     <div ref={chapterRef} style={{ height: `${scrollDistance}dvh` }}>
       <div className={`sticky top-0 h-dvh ${className}`}>
         <animated.p
-          className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm uppercase tracking-[0.18em] text-white/70"
+          // Anchored from the top (not vertically centered like the message
+          // below) — at this size a 2-line wrap centered in the full
+          // viewport pushes it down into the globe's horizon (raised to
+          // ~40% of viewport height), overlapping the curve instead of
+          // sitting in the open sky above it.
+          className="absolute inset-x-0 top-[20%] flex justify-center px-6 text-center"
           style={{ opacity: captionOpacity }}
         >
-          <span className="max-w-sm">{caption}</span>
+          <span
+            className="font-display max-w-3xl text-3xl font-bold uppercase tracking-[0.08em] md:text-5xl"
+            style={{
+              background: "var(--gradient-cta)",
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              color: "transparent",
+            }}
+          >
+            {caption}
+          </span>
         </animated.p>
         <animated.p
           className="font-display absolute inset-0 flex items-center justify-center px-6 text-center text-2xl font-bold text-white md:text-4xl"
