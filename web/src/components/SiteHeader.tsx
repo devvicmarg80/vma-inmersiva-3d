@@ -1,32 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Spring } from "@/components/animation/springs/spring";
 import { scrollTo } from "@/utils/scroll-to";
 
-const links = [{ href: "#valores", label: "Valores" }];
+const links = [
+  { href: "/", label: "Inicio" },
+  { href: "/nosotros", label: "Nosotros" },
+  { href: "/proyectos", label: "Proyectos" },
+];
 
 export default function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
 
-  // Anchor links jump via scrollTo() (the Lenis-aware utility) rather than
-  // native browser fragment navigation — Lenis owns the scroll position via
-  // its own rAF loop, so a plain browser anchor-jump gets fought/overridden
-  // on the next frame instead of landing.
-  const go = (id: string) => (e: React.MouseEvent) => {
-    e.preventDefault();
+  // Route changes (tapping a nav link) should always close the mobile
+  // sheet — without this it stays open behind the newly-loaded page.
+  useEffect(() => {
     setOpen(false);
-    scrollTo(id);
-  };
+  }, [pathname]);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[var(--ink)]/45 backdrop-blur-md">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[var(--ink)]/60 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <a
-          href="#"
+        <Link
+          href="/"
           onClick={(e) => {
-            e.preventDefault();
-            scrollTo(0);
+            if (pathname === "/") {
+              e.preventDefault();
+              scrollTo(0);
+            }
           }}
           className="shrink-0"
         >
@@ -40,28 +45,34 @@ export default function SiteHeader() {
             alt="VMA"
             className="h-12 w-auto md:h-14"
           />
-        </a>
+        </Link>
 
         <nav className="hidden items-center gap-7 md:flex">
-          {links.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              onClick={go(link.href.slice(1))}
-              className="text-sm text-white/75 transition-colors duration-[var(--duration-fast)] ease-entrance hover:text-white"
-            >
-              {link.label}
-            </a>
-          ))}
+          {links.map((link) => {
+            const active = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`relative text-sm transition-colors duration-[var(--duration-fast)] ease-entrance ${
+                  active ? "text-white" : "text-white/75 hover:text-white"
+                }`}
+              >
+                {link.label}
+                {active && (
+                  <span className="absolute -bottom-1.5 left-0 h-px w-full bg-[var(--ember)]" />
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
-        <a
-          href="#contacto"
-          onClick={go("contacto")}
-          className="hidden rounded-full bg-[var(--ember)] px-5 py-2 text-sm font-semibold text-[var(--ink)] md:inline-block"
+        <Link
+          href="/contacto"
+          className="hidden rounded-full bg-[var(--ember)] px-5 py-2 text-sm font-semibold text-[var(--ink)] transition-opacity duration-[var(--duration-fast)] ease-entrance hover:opacity-90 md:inline-block"
         >
           Invertir en VMA
-        </a>
+        </Link>
 
         <button
           type="button"
@@ -87,26 +98,31 @@ export default function SiteHeader() {
           from={{ opacity: 0, y: -12 }}
           to={{ opacity: 1, y: 0 }}
           config={{ tension: 210, friction: 26 }}
-          className="md:hidden"
+          className="border-t border-white/10 md:hidden"
         >
-          <div className="flex flex-col gap-1 px-6 pb-5">
-            {links.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                onClick={go(link.href.slice(1))}
-                className="py-2 text-sm text-white/80"
-              >
-                {link.label}
-              </a>
-            ))}
-            <a
-              href="#contacto"
-              onClick={go("contacto")}
+          <div className="flex flex-col gap-1 px-6 py-5">
+            {links.map((link) => {
+              const active = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`rounded-md px-2 py-2.5 text-sm ${
+                    active
+                      ? "bg-white/10 font-semibold text-white"
+                      : "text-white/80"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+            <Link
+              href="/contacto"
               className="mt-2 rounded-full bg-[var(--ember)] px-5 py-2.5 text-center text-sm font-semibold text-[var(--ink)]"
             >
               Invertir en VMA
-            </a>
+            </Link>
           </div>
         </Spring>
       )}
