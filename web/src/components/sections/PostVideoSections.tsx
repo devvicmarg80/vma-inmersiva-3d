@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Inview } from "@/components/animation/springs/in-view";
 import PhotoGlobe from "@/components/PhotoGlobe";
+import { NarrativeTransition } from "@/components/common/NarrativeTransition";
 import { ValoresSection } from "./ValoresSection";
 import { ContactoSection } from "./ContactoSection";
 import { SiteFooter } from "./SiteFooter";
@@ -36,6 +36,7 @@ const SCRUB_VH = 100;
 export function PostVideoSections() {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeProgressRef = useRef(0);
+  const glowBoostRef = useRef(0);
   const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
@@ -86,7 +87,7 @@ export function PostVideoSections() {
     return (
       <>
         <section
-          className="relative flex h-dvh items-center justify-center overflow-hidden bg-[var(--ink)] px-6"
+          className="relative flex h-dvh flex-col items-center justify-center gap-6 overflow-hidden bg-[var(--ink)] px-6"
           style={{
             backgroundImage:
               "linear-gradient(rgba(11,26,46,0.35), rgba(11,26,46,0.7)), url(/img/earth-day.jpg)",
@@ -96,6 +97,9 @@ export function PostVideoSections() {
         >
           <p className="max-w-sm text-center text-sm uppercase tracking-[0.18em] text-white/70">
             Del origen a la ejecución
+          </p>
+          <p className="font-display max-w-xl text-balance text-center text-2xl font-bold text-white md:text-4xl">
+            Cada proyecto comienza con un propósito.
           </p>
         </section>
         <ValoresSection />
@@ -108,7 +112,7 @@ export function PostVideoSections() {
   return (
     <div ref={containerRef} className="relative">
       <div className="sticky top-0 z-0 h-dvh w-full overflow-hidden bg-[var(--ink)]">
-        <PhotoGlobe progressRef={globeProgressRef} />
+        <PhotoGlobe progressRef={globeProgressRef} glowBoostRef={glowBoostRef} />
         <div
           className="pointer-events-none absolute inset-0"
           style={{
@@ -123,20 +127,14 @@ export function PostVideoSections() {
       </div>
 
       <div className="relative z-10" style={{ marginTop: "-100dvh" }}>
-        <div
-          style={{ height: `${SCRUB_VH}dvh` }}
-          className="flex items-center justify-center px-6"
-        >
-          <Inview
-            tag="p"
-            from={{ opacity: 0, y: 16 }}
-            to={{ opacity: 1, y: 0 }}
-            mode="once"
-            className="max-w-sm text-center text-sm uppercase tracking-[0.18em] text-white/70"
-          >
-            Del origen a la ejecución
-          </Inview>
-        </div>
+        <NarrativeTransition
+          caption="Del origen a la ejecución"
+          message="Cada proyecto comienza con un propósito."
+          scrollDistance={SCRUB_VH}
+          onProgress={(p) => {
+            glowBoostRef.current = p;
+          }}
+        />
 
         <ValoresSection />
         <ContactoSection />

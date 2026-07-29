@@ -1,0 +1,138 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { animated } from "@react-spring/web";
+import { useProgressTrigger } from "@/hooks/animation/use-progress-trigger";
+import { useWindowWidth } from "@/hooks/use-window-size";
+
+const MOBILE_BREAKPOINT = 640;
+const TABLET_BREAKPOINT = 1024;
+const TABLET_MOTION_SCALE = 0.6; // ~40% reduction
+const FLOAT_RANGE_PX = 26; // "20-30px", per the brief
+
+// Progress bands (0-1 over the whole chapter) the caption/message crossfade
+// and float across. Not evenly split: the caption gets a short early
+// window, the message gets the long middle "held" window, both taper out
+// before the next section's own entrance takes over.
+// Pushed later than a "start counting the instant the chapter is
+// geometrically reachable" split would suggest: ScrollExperience's own
+// hero video is still finishing its fade over roughly the first third of
+// this chapter's range (its bottom-fade gradient overlaps this section
+// rather than cutting off cleanly), so the caption's real visible window
+// only begins once that's clear — verified empirically, not guessed.
+const BANDS = {
+  captionOut: [0.32, 0.48],
+  messageIn: [0.46, 0.62],
+  messageOut: [0.82, 0.98],
+};
+
+function clamp01(t: number) {
+  return Math.min(1, Math.max(0, t));
+}
+function bandProgress(p: number, [start, end]: number[]) {
+  return clamp01((p - start) / (end - start));
+}
+
+/**
+ * The scroll "chapter" between the hero globe and the next section: a small
+ * caption that settles, then dissolves into a single institutional
+ * statement that holds in place (sticky, like the globe behind it) and
+ * drifts a few pixels while the user scrolls, then dissolves into whatever
+ * comes next. One `useProgressTrigger` read drives every derived value
+ * (opacity ×2, translateY, and an optional glow boost fed to the globe) so
+ * nothing can drift out of sync with the others or with scroll itself.
+ *
+ * Deliberately not a general "hero copy" component — it owns the sticky
+ * chapter layout (a tall spacer + a pinned inner viewport-height cell),
+ * not just the text, because the float/hold behavior only reads correctly
+ * with that structure in place.
+ */
+export function NarrativeTransition({
+  caption,
+  message,
+  scrollDistance,
+  onProgress,
+  className = "",
+}: {
+  caption: string;
+  message: string;
+  /** Height of the scroll chapter, in dvh — how long the caption→message
+   * sequence takes to play out before the next section arrives. */
+  scrollDistance: number;
+  /** Fires on every progress update (0-1) — used to feed a subtle glow
+   * boost into the globe behind this without this component knowing
+   * anything about the globe. */
+  onProgress?: (progress: number) => void;
+  className?: string;
+}) {
+  const chapterRef = useRef<HTMLDivElement>(null);
+  const width = useWindowWidth();
+  const isMobile = width > 0 && width <= MOBILE_BREAKPOINT;
+  const isTablet = width > MOBILE_BREAKPOINT && width <= TABLET_BREAKPOINT;
+  const motionScale = isMobile ? 0 : isTablet ? TABLET_MOTION_SCALE : 1;
+
+  // Starts false to match the server-rendered pass exactly (matchMedia
+  // doesn't exist during SSR), then updates post-hydration — reading it
+  // synchronously here instead caused a real hydration mismatch (server
+  // and client disagreeing on messageY's initial translateY).
+  const [reducedMotion, setReducedMotion] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mq.matches);
+    const onChange = () => setReducedMotion(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  const onProgressRef = useRef(onProgress);
+  useEffect(() => {
+    onProgressRef.current = onProgress;
+  }, [onProgress]);
+
+  const { interpolatedProgress } = useProgressTrigger({
+    elementRef: chapterRef,
+    start: "top bottom",
+    end: "bottom top",
+    config: { duration: 1 },
+    onChange: ({ progress }) => onProgressRef.current?.(progress),
+  });
+
+  const captionOpacity = interpolatedProgress.to((p) =>
+    p < BANDS.captionOut[0]
+      ? 1
+      : 1 - bandProgress(p, BANDS.captionOut),
+  );
+  const messageOpacity = interpolatedProgress.to((p) => {
+    const in_ = bandProgress(p, BANDS.messageIn);
+    const out = bandProgress(p, BANDS.messageOut);
+    return Math.min(in_, 1 - out);
+  });
+  // Reduced motion / mobile: no continuous drift, opacity crossfade only.
+  const messageY = interpolatedProgress.to((p) => {
+    if (reducedMotion || motionScale === 0) return 0;
+    const t = bandProgress(p, [BANDS.messageIn[0], 1]);
+    return (FLOAT_RANGE_PX / 2 - t * FLOAT_RANGE_PX) * motionScale;
+  });
+
+  return (
+    <div ref={chapterRef} style={{ height: `${scrollDistance}dvh` }}>
+      <div className={`sticky top-0 h-dvh ${className}`}>
+        <animated.p
+          className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm uppercase tracking-[0.18em] text-white/70"
+          style={{ opacity: captionOpacity }}
+        >
+          <span className="max-w-sm">{caption}</span>
+        </animated.p>
+        <animated.p
+          className="font-display absolute inset-0 flex items-center justify-center px-6 text-center text-2xl font-bold text-white md:text-4xl"
+          style={{
+            opacity: messageOpacity,
+            transform: messageY.to((y) => `translateY(${y}px)`),
+          }}
+        >
+          <span className="max-w-xl text-balance">{message}</span>
+        </animated.p>
+      </div>
+    </div>
+  );
+}

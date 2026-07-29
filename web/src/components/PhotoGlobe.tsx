@@ -82,6 +82,9 @@ const FRAME_BUDGET_MS = 16.7; // 60fps
 // normally show is barely visible, so it's a close-to-free speed win
 // exactly when frames are already struggling.
 const NEAREST_BELOW_QUALITY = 0.85;
+// Base glow alpha is 0.28; at glowBoostRef=1 it reaches 0.40 — "almost
+// imperceptible", per the brief, not a sunrise flash.
+const GLOW_BOOST_MAX = 0.12;
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
@@ -150,11 +153,16 @@ const SATELLITE_ORBITS = SATELLITES.map(satelliteOrbitRing);
 
 export default function PhotoGlobe({
   progressRef,
+  glowBoostRef,
   className = "",
 }: {
   /** 0..1, mutated directly by the parent's own scroll rAF loop — read
    * every frame here without ever triggering a React re-render. */
   progressRef: React.RefObject<number>;
+  /** Optional 0..1, same mutation pattern as progressRef — nudges the
+   * atmospheric glow's alpha up slightly (see GLOW_BOOST_MAX below).
+   * Omitted by every caller except PostVideoSections' narrative chapter. */
+  glowBoostRef?: React.RefObject<number>;
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -528,8 +536,11 @@ export default function PhotoGlobe({
       ctx.clearRect(0, 0, W, H);
       drawSpaceBackground(spinNow);
 
+      // Almost imperceptible sunrise-over-Earth brightening — nudged by the
+      // narrative chapter's scroll progress when present, never a jump.
+      const glowAlpha = 0.28 + (glowBoostRef?.current ?? 0) * GLOW_BOOST_MAX;
       const glow = ctx.createRadialGradient(cx, cy, R * 0.62, cx, cy, R * 1.35);
-      glow.addColorStop(0, "rgba(210,232,245,0.28)");
+      glow.addColorStop(0, `rgba(210,232,245,${glowAlpha})`);
       glow.addColorStop(1, "rgba(210,232,245,0)");
       ctx.fillStyle = glow;
       ctx.beginPath();
@@ -599,7 +610,7 @@ export default function PhotoGlobe({
       canvas!.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
     };
-  }, [progressRef]);
+  }, [progressRef, glowBoostRef]);
 
   return (
     <canvas
