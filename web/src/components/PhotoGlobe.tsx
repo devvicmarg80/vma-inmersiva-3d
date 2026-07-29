@@ -36,8 +36,15 @@ const DEG2RAD = Math.PI / 180;
 // Grows and rises to dominate the Valores section, then shrinks and
 // sidesteps to make room for Contacto — see PostVideoSections for how
 // `progress` is computed across the full section height.
+// t=0's arcTop was 0.58 — the sphere's top curve sat 58% down the
+// viewport, leaving a huge empty starfield above the caption/message
+// during the narrative chapter (that chapter sits almost entirely at
+// progress≈0, so this specific value is what governed the "empty space"
+// complaint). Raised to 0.40 + a touch more size so the glowing horizon
+// reads as the dominant visual immediately, not something arrived at only
+// once the section is well underway.
 const KEYFRAMES: Keyframe[] = [
-  { t: 0.0, rMult: 1.0, cxFrac: 0.5, arcTop: 0.58 },
+  { t: 0.0, rMult: 1.12, cxFrac: 0.5, arcTop: 0.4 },
   { t: 0.5, rMult: 1.55, cxFrac: 0.5, arcTop: 0.06 },
   { t: 1.0, rMult: 0.6, cxFrac: 0.8, arcTop: 0.4 },
 ];
@@ -82,9 +89,8 @@ const FRAME_BUDGET_MS = 16.7; // 60fps
 // normally show is barely visible, so it's a close-to-free speed win
 // exactly when frames are already struggling.
 const NEAREST_BELOW_QUALITY = 0.85;
-// Base glow alpha is 0.28; at glowBoostRef=1 it reaches 0.40 — "almost
-// imperceptible", per the brief, not a sunrise flash.
-const GLOW_BOOST_MAX = 0.12;
+// Base glow alpha is 0.4; at glowBoostRef=1 it reaches 0.6.
+const GLOW_BOOST_MAX = 0.2;
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
@@ -536,15 +542,18 @@ export default function PhotoGlobe({
       ctx.clearRect(0, 0, W, H);
       drawSpaceBackground(spinNow);
 
-      // Almost imperceptible sunrise-over-Earth brightening — nudged by the
-      // narrative chapter's scroll progress when present, never a jump.
-      const glowAlpha = 0.28 + (glowBoostRef?.current ?? 0) * GLOW_BOOST_MAX;
-      const glow = ctx.createRadialGradient(cx, cy, R * 0.62, cx, cy, R * 1.35);
-      glow.addColorStop(0, `rgba(210,232,245,${glowAlpha})`);
-      glow.addColorStop(1, "rgba(210,232,245,0)");
+      // Sunrise-over-Earth brightening, nudged further by the narrative
+      // chapter's scroll progress when present. Saturated cyan (matching the
+      // site's --cyan accent) instead of the earlier near-white — the
+      // near-white version read as barely-there next to a starfield this
+      // dark, which was part of why the whole chapter looked empty.
+      const glowAlpha = 0.4 + (glowBoostRef?.current ?? 0) * GLOW_BOOST_MAX;
+      const glow = ctx.createRadialGradient(cx, cy, R * 0.55, cx, cy, R * 1.5);
+      glow.addColorStop(0, `rgba(56,208,255,${glowAlpha})`);
+      glow.addColorStop(1, "rgba(56,208,255,0)");
       ctx.fillStyle = glow;
       ctx.beginPath();
-      ctx.arc(cx, cy, R * 1.35, 0, Math.PI * 2);
+      ctx.arc(cx, cy, R * 1.5, 0, Math.PI * 2);
       ctx.fill();
 
       drawSatellites(spinNow, rotY, rotX, false);
@@ -558,11 +567,11 @@ export default function PhotoGlobe({
         ctx.fill();
       }
 
-      const rim = ctx.createRadialGradient(cx, cy, R * 0.9, cx, cy, R * 1.03);
-      rim.addColorStop(0, "rgba(225,240,250,0)");
-      rim.addColorStop(1, "rgba(225,240,250,0.5)");
+      const rim = ctx.createRadialGradient(cx, cy, R * 0.9, cx, cy, R * 1.04);
+      rim.addColorStop(0, "rgba(94,220,255,0)");
+      rim.addColorStop(1, "rgba(94,220,255,0.8)");
       ctx.strokeStyle = rim;
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 5;
       ctx.beginPath();
       ctx.arc(cx, cy, R, 0, Math.PI * 2);
       ctx.stroke();
