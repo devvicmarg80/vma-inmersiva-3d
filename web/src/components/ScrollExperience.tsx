@@ -159,6 +159,7 @@ export default function ScrollExperience() {
     // rather than visibly speeding through the footage.
     const MAX_RATE = 2.2;
     let displayedTime = 0;
+    let targetProgress = 0;
     let lastTickAt = 0;
 
     const onScroll = () => {
@@ -169,35 +170,36 @@ export default function ScrollExperience() {
       raf = requestAnimationFrame(tick);
       const dt = lastTickAt ? Math.min(0.1, (now - lastTickAt) / 1000) : 0;
       lastTickAt = now;
-      if (!dirty) return;
 
-      const track = trackRef.current;
-      const video = videoRef.current;
-      if (!track) {
-        dirty = false;
-        return;
-      }
-
-      const totalScrollable = track.offsetHeight - window.innerHeight;
-      const top = track.getBoundingClientRect().top;
-      const progress = clamp(-top / totalScrollable, 0, 1);
-
-      if (progress > 0.02) setShowHint(false);
-
-      // Skip the seek while a previous one is still resolving so seeks
-      // never queue up behind fast scrolling; `dirty` stays true so this
-      // retries next frame instead of dropping the update entirely.
-      if (video && video.duration && Number.isFinite(video.duration)) {
-        if (video.seeking) {
-          return;
+      // Recomputing progress needs a layout read (getBoundingClientRect),
+      // so it's gated on `dirty` (an actual scroll happened). Advancing
+      // displayedTime toward it must NOT be gated the same way — that was
+      // the bug: once the user stopped scrolling, dirty went false and the
+      // catch-up motion just stopped mid-frame, stranding the video well
+      // short of wherever the scroll position said it should be (read as
+      // "you cut the video"). Scrolling through the whole track in under
+      // ~15s (34s / MAX_RATE) made this the common case, not an edge case.
+      if (dirty) {
+        const track = trackRef.current;
+        if (track) {
+          const totalScrollable = track.offsetHeight - window.innerHeight;
+          const top = track.getBoundingClientRect().top;
+          targetProgress = clamp(-top / totalScrollable, 0, 1);
+          if (targetProgress > 0.02) setShowHint(false);
         }
-        const targetTime = progress * video.duration;
-        const maxStep = MAX_RATE * dt;
-        const diff = targetTime - displayedTime;
-        displayedTime += Math.max(-maxStep, Math.min(maxStep, diff));
-        video.currentTime = displayedTime;
+        dirty = false;
       }
-      dirty = false;
+
+      const video = videoRef.current;
+      if (video && video.duration && Number.isFinite(video.duration)) {
+        const targetTime = targetProgress * video.duration;
+        if (Math.abs(targetTime - displayedTime) > 0.001 && !video.seeking) {
+          const maxStep = MAX_RATE * dt;
+          const diff = targetTime - displayedTime;
+          displayedTime += Math.max(-maxStep, Math.min(maxStep, diff));
+          video.currentTime = displayedTime;
+        }
+      }
 
       const p = (displayedTime / (video?.duration || 1)) * ACT_COUNT;
       const next = acts.map((_, i) => actOpacity(p, i));
