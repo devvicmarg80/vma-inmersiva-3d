@@ -83,7 +83,7 @@ export default function ProyectosPage() {
 
       <section className="scroll-mt-24 px-6 py-12 md:py-16">
         <div className="mx-auto max-w-5xl">
-          <p className="text-xs uppercase tracking-[0.14em] text-[var(--ember)]">
+          <p className="text-xs uppercase tracking-[0.14em] text-[var(--cyan)]">
             Áreas de acción
           </p>
           <div className="mt-6 divide-y divide-white/10 border-y border-white/10">
@@ -92,7 +92,7 @@ export default function ProyectosPage() {
                 key={area.label}
                 className="flex flex-col gap-2 py-6 sm:flex-row sm:items-baseline sm:gap-8"
               >
-                <span className="shrink-0 font-mono text-sm text-[var(--ember)]">
+                <span className="shrink-0 font-mono text-sm text-[var(--cyan)]">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <div>
@@ -114,7 +114,7 @@ export default function ProyectosPage() {
             <dl className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-4">
               {impact.stats.map((stat) => (
                 <div key={stat.label}>
-                  <dd className="font-display text-3xl font-bold text-[var(--ember)] md:text-4xl">
+                  <dd className="font-display text-3xl font-bold text-[var(--cyan)] md:text-4xl">
                     <CountUpStat value={stat.value} />
                   </dd>
                   <dt className="mt-2 text-sm text-white/70">{stat.label}</dt>

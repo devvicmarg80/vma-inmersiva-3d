@@ -8,7 +8,7 @@ import { SectionHeading } from "./SectionHeading";
 type Status = "idle" | "submitting" | "success" | "error";
 
 const inputClass =
-  "w-full rounded-md border border-[var(--rule)] bg-[var(--paper-raised)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition-colors duration-[var(--duration-fast)] ease-entrance focus:border-[var(--ember)]";
+  "w-full rounded-md border border-[var(--rule)] bg-[var(--paper-raised)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition-colors duration-[var(--duration-fast)] ease-entrance focus:border-[var(--cyan)]";
 
 export function ContactoSection() {
   const [status, setStatus] = useState<Status>("idle");
@@ -87,7 +87,7 @@ export function ContactoSection() {
               <button
                 type="button"
                 onClick={() => setStatus("idle")}
-                className="mt-6 text-sm font-semibold text-[var(--ember)] underline underline-offset-4"
+                className="mt-6 text-sm font-semibold text-[var(--cyan)] underline underline-offset-4"
               >
                 Enviar otro mensaje
               </button>

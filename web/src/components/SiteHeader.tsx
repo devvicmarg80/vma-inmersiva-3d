@@ -60,7 +60,7 @@ export default function SiteHeader() {
               >
                 {link.label}
                 {active && (
-                  <span className="absolute -bottom-1.5 left-0 h-px w-full bg-[var(--ember)]" />
+                  <span className="absolute -bottom-1.5 left-0 h-px w-full bg-[var(--cyan)]" />
                 )}
               </Link>
             );

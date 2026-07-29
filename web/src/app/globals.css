@@ -16,8 +16,6 @@
   --raw-color-navy: #123a5c;
   --raw-color-steel: #3e77ac;
   --raw-color-steel-soft: #dce6ef;
-  --raw-color-ember: #bd7a3b;
-  --raw-color-ember-soft: #f1e3d2;
   --raw-color-silver: #8fa0af;
   --raw-color-rule: #cbd5de;
   --raw-color-cyan: #22d3ee;
@@ -41,8 +39,6 @@
   --navy: var(--raw-color-navy);
   --steel: var(--raw-color-steel);
   --steel-soft: var(--raw-color-steel-soft);
-  --ember: var(--raw-color-ember);
-  --ember-soft: var(--raw-color-ember-soft);
   --silver: var(--raw-color-silver);
   --rule: var(--raw-color-rule);
   --cyan: var(--raw-color-cyan);
@@ -51,10 +47,9 @@
      hover, no por diferencia de tono. */
   --panel: var(--raw-color-panel);
 
-  /* Botones — reemplaza el naranja (--ember) para las acciones primarias:
-     azul oscuro hacia cyan, misma familia que el borde-gradiente de
-     HudCard. --ember se conserva para acentos de texto (subrayado activo,
-     foco de input), solo los botones cambian. */
+  /* Azul oscuro hacia cyan, misma familia que el borde-gradiente de
+     HudCard — usado en botones y, en general, como el único acento de
+     color del sitio. El naranja (--ember) se eliminó por completo. */
   --gradient-cta: linear-gradient(
     135deg,
     var(--navy) 0%,
@@ -94,8 +89,6 @@
   --color-navy: var(--navy);
   --color-steel: var(--steel);
   --color-steel-soft: var(--steel-soft);
-  --color-ember: var(--ember);
-  --color-ember-soft: var(--ember-soft);
   --color-silver: var(--silver);
   --color-rule: var(--rule);
   --color-cyan: var(--cyan);

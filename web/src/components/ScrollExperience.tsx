@@ -337,7 +337,7 @@ function ActContent({
         {act.tag}
       </div>
       {act.eyebrow && (
-        <p className="mb-3 text-sm uppercase tracking-[0.1em] text-[var(--ember)]">
+        <p className="mb-3 text-sm uppercase tracking-[0.1em] text-[var(--cyan)]">
           {act.eyebrow}
         </p>
       )}

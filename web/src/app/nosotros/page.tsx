@@ -71,7 +71,7 @@ export default function NosotrosPage() {
                 key={area.label}
                 className="flex flex-col gap-2 py-6 sm:flex-row sm:items-baseline sm:gap-8"
               >
-                <span className="shrink-0 font-mono text-sm text-[var(--ember)]">
+                <span className="shrink-0 font-mono text-sm text-[var(--cyan)]">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <div>
