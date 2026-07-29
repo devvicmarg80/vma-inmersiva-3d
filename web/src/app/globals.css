@@ -21,6 +21,7 @@
   --raw-color-silver: #8fa0af;
   --raw-color-rule: #cbd5de;
   --raw-color-cyan: #22d3ee;
+  --raw-color-panel: #101d30;
 
   --raw-duration-fast: 150ms;
   --raw-duration-normal: 250ms;
@@ -45,6 +46,10 @@
   --silver: var(--raw-color-silver);
   --rule: var(--raw-color-rule);
   --cyan: var(--raw-color-cyan);
+  /* Fondo interior de las tarjetas con borde-gradiente (HudCard) — un
+     punto más claro que --ink para que la tarjeta se despegue de la
+     página incluso cuando el borde-gradiente no está en hover. */
+  --panel: var(--raw-color-panel);
 
   --duration-fast: var(--raw-duration-fast);
   --duration-normal: var(--raw-duration-normal);
@@ -83,6 +88,7 @@
   --color-silver: var(--silver);
   --color-rule: var(--rule);
   --color-cyan: var(--cyan);
+  --color-panel: var(--panel);
   --font-sans: var(--sans);
   --font-display: var(--display);
   --font-mono: var(--mono);

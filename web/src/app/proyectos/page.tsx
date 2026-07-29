@@ -1,4 +1,12 @@
 import type { Metadata } from "next";
+import {
+  GraduationCap,
+  HardHat,
+  Wifi,
+  Leaf,
+  Users,
+  ShieldCheck,
+} from "lucide-react";
 import { SectionHeading } from "@/components/sections/SectionHeading";
 import { strategicAreas } from "@/content/company";
 import { acts } from "@/content/copy";
@@ -17,26 +25,32 @@ const kpiCategories = [
   {
     label: "Impacto en educación",
     body: "Número de personas capacitadas en programas de formación.",
+    icon: GraduationCap,
   },
   {
     label: "Infraestructura y obras",
     body: "Proyectos ejecutados en telecomunicaciones, vías y espacios comunitarios.",
+    icon: HardHat,
   },
   {
     label: "Alcance tecnológico",
     body: "Comunidades con acceso a TIC y medios digitales.",
+    icon: Wifi,
   },
   {
     label: "Sostenibilidad ambiental",
     body: "Reducción de impacto y adopción de energías renovables.",
+    icon: Leaf,
   },
   {
     label: "Participación comunitaria",
     body: "Líderes formados y programas de empoderamiento.",
+    icon: Users,
   },
   {
     label: "Transparencia y auditoría",
     body: "Evaluación del uso de recursos y efectividad de los programas.",
+    icon: ShieldCheck,
   },
 ];
 
@@ -113,8 +127,10 @@ export default function ProyectosPage() {
               <HudCard
                 key={kpi.label}
                 index={String(i + 1).padStart(2, "0")}
+                icon={<kpi.icon size={28} strokeWidth={2.5} />}
                 title={kpi.label}
                 body={kpi.body}
+                delay={i * 80}
               />
             ))}
           </div>

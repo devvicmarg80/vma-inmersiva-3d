@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Target, Compass, Eye } from "lucide-react";
 import { SectionHeading } from "@/components/sections/SectionHeading";
 import { identity, strategicAreas, coreValues } from "@/content/company";
 import { ContactoSection } from "@/components/sections/ContactoSection";
@@ -33,11 +34,24 @@ export default function NosotrosPage() {
         <div className="mx-auto grid max-w-5xl gap-4 sm:grid-cols-3">
           <HudCard
             index="01"
+            icon={<Target size={28} strokeWidth={2.5} />}
             title="Propósito superior"
             body={identity.proposito}
           />
-          <HudCard index="02" title="Misión" body={identity.mision} />
-          <HudCard index="03" title="Visión" body={identity.vision} />
+          <HudCard
+            index="02"
+            icon={<Compass size={28} strokeWidth={2.5} />}
+            title="Misión"
+            body={identity.mision}
+            delay={80}
+          />
+          <HudCard
+            index="03"
+            icon={<Eye size={28} strokeWidth={2.5} />}
+            title="Visión"
+            body={identity.vision}
+            delay={160}
+          />
         </div>
       </section>
 
@@ -77,8 +91,10 @@ export default function NosotrosPage() {
               <HudCard
                 key={value.title}
                 index={String(i + 1).padStart(2, "0")}
+                icon={<value.icon size={28} strokeWidth={2.5} />}
                 title={value.title}
                 body={value.body}
+                delay={i * 80}
               />
             ))}
           </div>

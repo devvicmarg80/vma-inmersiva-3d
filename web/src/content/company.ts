@@ -12,6 +12,17 @@
  * - Director/officer names — not listed in any source document.
  */
 
+import {
+  Lightbulb,
+  HeartHandshake,
+  Leaf,
+  Users,
+  ShieldCheck,
+  Handshake,
+  Building2,
+  type LucideIcon,
+} from "lucide-react";
+
 export const identity = {
   proposito:
     "Transformar comunidades a través de la innovación, la educación y el desarrollo sostenible, promoviendo el bienestar social, económico y cultural con un enfoque inclusivo y sostenible, alineado con los principios de la Responsabilidad Social Empresarial.",
@@ -52,35 +63,43 @@ export const strategicAreas: StrategicArea[] = [
 export type CoreValue = {
   title: string;
   body: string;
+  icon: LucideIcon;
 };
 
 export const coreValues: CoreValue[] = [
   {
     title: "Innovación",
     body: "Soluciones creativas para transformar comunidades.",
+    icon: Lightbulb,
   },
   {
     title: "Compromiso social",
     body: "Trabajamos por el bienestar de las personas y su entorno.",
+    icon: HeartHandshake,
   },
   {
     title: "Sostenibilidad",
     body: "Desarrollo a largo plazo, respetando el medio ambiente.",
+    icon: Leaf,
   },
   {
     title: "Inclusión",
     body: "Oportunidades para todos, sin distinción.",
+    icon: Users,
   },
   {
     title: "Transparencia",
     body: "Ética y responsabilidad en cada acción.",
+    icon: ShieldCheck,
   },
   {
     title: "Colaboración",
     body: "Redes con actores estratégicos para maximizar el impacto.",
+    icon: Handshake,
   },
   {
     title: "Responsabilidad social empresarial",
     body: "Prácticas sostenibles y éticas en cada iniciativa.",
+    icon: Building2,
   },
 ];
