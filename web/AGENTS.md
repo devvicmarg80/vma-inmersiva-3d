@@ -103,8 +103,9 @@ gap values if you do that again, don't leave the shortened ones in.
 `components/HeroStarfield.tsx`, mounted in `ScrollExperience.tsx` right
 after `CursorDistortion`, rendering on top of both the Hero video and its
 distortion canvas. A transparent-background Canvas 2D overlay — twinkling
-stars plus an occasional comet (same hand-rolled comet shape as
-PhotoGlobe's, shorter gap/duration) — deliberately not sharing code with
+stars plus up to `MAX_CONCURRENT_COMETS` (3) comets in flight at once,
+each randomized in size (`scale`, 0.6-1.9x) and speed (`duration`,
+650-2600ms) independently — deliberately not sharing code with
 `PhotoGlobe.tsx` (different tuning problem: staying legible over
 *varying* video content across every act, space and terrain/community
 scenes alike, vs. PhotoGlobe owning its own opaque background). No
