@@ -8,6 +8,30 @@ import { useEffect, useRef } from "react";
 // pointer going still. It's a cheap swirl+turbulence shader rather than a
 // true fluid solver — good enough for the effect's "feel" at a fraction of
 // the GPU cost.
+//
+// This is the Hero's interaction layer — the "virtual cursor" (`stir`,
+// lagged behind the real pointer) and "velocity system" (`energy`, rising
+// with pointer speed and decaying back to rest) already live here. Tunables
+// pulled into one place instead of scattered magic numbers, so adjusting
+// feel doesn't mean hunting through the tick loop.
+const CONFIG = {
+  /** Time constant (ms) for the virtual cursor's lag behind the real
+   * pointer — larger = more "weight", smaller = snappier. */
+  cursorSmoothingMs: 140,
+  /** Time constant (ms) for the swirl energy's decay back to 0 once the
+   * pointer stops moving. */
+  energyDecayMs: 480,
+  /** Scales pointer-movement distance (in normalized UV/frame) into swirl
+   * energy — higher = a smaller flick reaches full intensity. */
+  velocityMultiplier: 14,
+  /** How long after scroll stops before this resumes rendering — scroll
+   * always wins; this is just debounce so it doesn't flicker on/off
+   * between scroll events. */
+  scrollResumeDelayMs: 140,
+  /** Canvas opacity transition when toggling visible/hidden (scroll,
+   * reduced-motion, tab hidden, window blur all use this same fade). */
+  visibilityFadeMs: 200,
+} as const;
 
 const VERT_SRC = `#version 300 es
 in vec2 aPos;
@@ -153,7 +177,7 @@ export default function CursorDistortion({
       const y = 1 - (e.clientY - rect.top) / rect.height;
       const dx = x - lastPointer.x;
       const dy = y - lastPointer.y;
-      energy = Math.min(1, energy + Math.hypot(dx, dy) * 14);
+      energy = Math.min(1, energy + Math.hypot(dx, dy) * CONFIG.velocityMultiplier);
       lastPointer = { x, y };
       pointer.x = x;
       pointer.y = y;
@@ -193,26 +217,58 @@ export default function CursorDistortion({
       window.clearTimeout(scrollIdleTimer);
       scrollIdleTimer = window.setTimeout(() => {
         scrolling = false;
-      }, 140);
+      }, CONFIG.scrollResumeDelayMs);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
 
-    canvas.style.transition = "opacity 200ms ease";
+    // prefers-reduced-motion: checked directly (no React state) since this
+    // effect is already client-only and nothing here renders visible DOM
+    // that could mismatch between server/client — same reasoning as
+    // PhotoGlobe's `reduceMotion`. Read live via the query's own listener
+    // rather than once, in case the OS setting changes mid-session.
+    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let reducedMotion = reducedMotionQuery.matches;
+    const onReducedMotionChange = () => {
+      reducedMotion = reducedMotionQuery.matches;
+    };
+    reducedMotionQuery.addEventListener("change", onReducedMotionChange);
+
+    // Tab hidden / window unfocused: an idle/hover embellishment has no
+    // reason to keep sampling the video texture and drawing every frame
+    // when nobody can see it — same "hide canvas, skip all work" treatment
+    // as the scroll-priority case above, just a different trigger.
+    let pageHidden = document.hidden;
+    const onVisibilityChange = () => {
+      pageHidden = document.hidden;
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    let windowFocused = document.hasFocus();
+    const onFocus = () => {
+      windowFocused = true;
+    };
+    const onBlur = () => {
+      windowFocused = false;
+    };
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("blur", onBlur);
+
+    canvas.style.transition = `opacity ${CONFIG.visibilityFadeMs}ms ease`;
 
     let raf = 0;
     let last = performance.now();
     let disposed = false;
-    let wasScrolling = false;
+    let wasPaused = false;
 
     const tick = (now: number) => {
       raf = requestAnimationFrame(tick);
       if (disposed) return;
 
-      if (scrolling !== wasScrolling) {
-        canvas.style.opacity = scrolling ? "0" : "1";
-        wasScrolling = scrolling;
+      const paused = scrolling || reducedMotion || pageHidden || !windowFocused;
+      if (paused !== wasPaused) {
+        canvas.style.opacity = paused ? "0" : "1";
+        wasPaused = paused;
       }
-      if (scrolling) {
+      if (paused) {
         last = now;
         return;
       }
@@ -220,10 +276,10 @@ export default function CursorDistortion({
       const dt = Math.min(64, now - last);
       last = now;
 
-      const lag = 1 - Math.exp(-dt / 140);
+      const lag = 1 - Math.exp(-dt / CONFIG.cursorSmoothingMs);
       stir.x += (pointer.x - stir.x) * lag;
       stir.y += (pointer.y - stir.y) * lag;
-      energy *= Math.exp(-dt / 480); // settles out within ~1s of no movement
+      energy *= Math.exp(-dt / CONFIG.energyDecayMs); // settles back to 0 on its own
 
       if (video.readyState < 2 || video.videoWidth === 0) return;
 
@@ -258,6 +314,10 @@ export default function CursorDistortion({
       window.clearTimeout(scrollIdleTimer);
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("scroll", onScroll);
+      reducedMotionQuery.removeEventListener("change", onReducedMotionChange);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("blur", onBlur);
       ro.disconnect();
       gl.deleteTexture(texture);
       gl.deleteBuffer(buffer);
