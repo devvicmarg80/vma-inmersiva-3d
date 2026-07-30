@@ -22,6 +22,15 @@ type Vec3 = { x: number; y: number; z: number };
 type Keyframe = { t: number; rMult: number; cxFrac: number; arcTop: number };
 type Satellite = { orbitR: number; incl: number; phase: number; speed: number };
 type Star = { x: number; y: number; r: number; a: number };
+type Comet = {
+  spawnAt: number;
+  duration: number;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  trailFrac: number;
+};
 type Planet = {
   xFrac: number;
   yFrac: number;
@@ -92,6 +101,15 @@ const FRAME_BUDGET_MS = 16.7; // 60fps
 const NEAREST_BELOW_QUALITY = 0.85;
 // Base glow alpha is 0.4; at glowBoostRef=1 it reaches 0.6.
 const GLOW_BOOST_MAX = 0.2;
+
+// Occasional shooting star crossing the starfield — ambient and rare on
+// purpose (a comet every few seconds would read as a screensaver, not a
+// premium detail). At most one in flight at a time; the next spawn time is
+// re-rolled within this window every time the previous one finishes.
+const COMET_MIN_GAP_MS = 9_000;
+const COMET_MAX_GAP_MS = 22_000;
+const COMET_MIN_DURATION_MS = 1_100;
+const COMET_MAX_DURATION_MS = 1_900;
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
@@ -239,6 +257,74 @@ export default function PhotoGlobe({
       stars.push({ x: Math.random(), y: Math.random(), r: Math.random() * 1.1 + 0.2, a: Math.random() * 0.5 + 0.12 });
     }
 
+    // ---- comets: at most one in flight, spawned on a randomized timer ----
+    let comet: Comet | null = null;
+    let nextCometAt = performance.now() + rand(COMET_MIN_GAP_MS, COMET_MAX_GAP_MS);
+    function rand(min: number, max: number) {
+      return min + Math.random() * (max - min);
+    }
+    function maybeSpawnComet(now: number) {
+      if (reduceMotion || comet || now < nextCometAt) return;
+      // Enters from one of the four edges, exits roughly opposite with
+      // some randomness so the path never reads as the same comet twice.
+      const edge = Math.floor(Math.random() * 4);
+      const along = rand(0.15, 0.85);
+      const start = [
+        { x: -0.05, y: along },
+        { x: along, y: -0.05 },
+        { x: 1.05, y: along },
+        { x: along, y: 1.05 },
+      ][edge];
+      const end = {
+        x: clamp01(1 - start.x + rand(-0.2, 0.2)),
+        y: clamp01(1 - start.y + rand(-0.2, 0.2)),
+      };
+      comet = {
+        spawnAt: now,
+        duration: rand(COMET_MIN_DURATION_MS, COMET_MAX_DURATION_MS),
+        x0: start.x,
+        y0: start.y,
+        x1: end.x,
+        y1: end.y,
+        trailFrac: rand(0.1, 0.16),
+      };
+    }
+    function drawComet(now: number, attn: AttentionMultipliers) {
+      if (!comet) return;
+      const t = (now - comet.spawnAt) / comet.duration;
+      if (t >= 1) {
+        comet = null;
+        nextCometAt = now + rand(COMET_MIN_GAP_MS, COMET_MAX_GAP_MS);
+        return;
+      }
+      // Quick fade in, held bright, quick fade out — never a hard cut.
+      const alpha = Math.min(1, t * 6) * Math.min(1, (1 - t) * 6) * attn.stars;
+      const cx = lerp(comet.x0, comet.x1, t) * W;
+      const cy = lerp(comet.y0, comet.y1, t) * H;
+      const dx = comet.x1 - comet.x0;
+      const dy = comet.y1 - comet.y0;
+      const norm = Math.hypot(dx, dy) || 1;
+      const trailLen = comet.trailFrac * Math.max(W, H);
+      const tailX = cx - (dx / norm) * trailLen;
+      const tailY = cy - (dy / norm) * trailLen;
+
+      const grad = ctx!.createLinearGradient(tailX, tailY, cx, cy);
+      grad.addColorStop(0, "rgba(223,232,242,0)");
+      grad.addColorStop(1, `rgba(223,232,242,${0.85 * alpha})`);
+      ctx!.strokeStyle = grad;
+      ctx!.lineWidth = 1.5;
+      ctx!.lineCap = "round";
+      ctx!.beginPath();
+      ctx!.moveTo(tailX, tailY);
+      ctx!.lineTo(cx, cy);
+      ctx!.stroke();
+
+      ctx!.fillStyle = `rgba(255,255,255,${alpha})`;
+      ctx!.beginPath();
+      ctx!.arc(cx, cy, 1.3, 0, Math.PI * 2);
+      ctx!.fill();
+    }
+
     function drawSpaceBackground(now: number, attn: AttentionMultipliers) {
       const neb1 = ctx!.createRadialGradient(W * 0.15, H * 0.2, 0, W * 0.15, H * 0.2, W * 0.4);
       neb1.addColorStop(0, `rgba(63,90,160,${0.1 * attn.nebula})`);
@@ -300,6 +386,9 @@ export default function PhotoGlobe({
         ctx!.arc(px, py, p.r, 0, Math.PI * 2);
         ctx!.fill();
       });
+
+      maybeSpawnComet(now);
+      drawComet(now, attn);
     }
 
     function project(p: Vec3) {

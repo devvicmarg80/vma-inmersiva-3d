@@ -83,3 +83,17 @@ hero backdrops via `HeroGlobeBackdrop`) — opt out per-instance with
 `<PhotoGlobe attentionDirector={false} />` if one of those ever shouldn't
 have it. Do not add a second RAF loop or a GSAP-style timeline for this —
 the whole point is it rides the loop that already exists.
+
+# Comets (PhotoGlobe)
+
+Same file, same draw loop as the stars/constellations already there — a
+rare shooting star (`COMET_MIN_GAP_MS`–`COMET_MAX_GAP_MS`, currently
+9-22s, at most one in flight at a time) crossing the starfield, drawn in
+`drawSpaceBackground`. Deliberately hand-rolled, not a third-party
+particle/animation library — the codebase's whole graphics stack (this
+file, `CursorDistortion.tsx`, `HudCard`'s tilt) is hand-rolled Canvas
+2D/WebGL on purpose, and a comet is simple enough not to need a dependency
+for it. Respects `prefers-reduced-motion` (never spawns). Verified by
+temporarily shortening the gap constants and confirming via CDP
+screenshots that a comet actually renders — remember to restore the real
+gap values if you do that again, don't leave the shortened ones in.
