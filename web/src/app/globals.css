@@ -57,6 +57,17 @@
     var(--cyan) 100%
   );
 
+  /* Same blue family as --gradient-cta, but every stop is bright — for
+     large display text sitting directly on the dark starfield/globe
+     backdrop (NarrativeTransition's caption), where --gradient-cta's dark
+     navy/steel stops read as illegible against an already-dark sky. */
+  --gradient-hero: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    var(--cyan) 60%,
+    var(--steel-soft) 100%
+  );
+
   --duration-fast: var(--raw-duration-fast);
   --duration-normal: var(--raw-duration-normal);
 

@@ -117,27 +117,56 @@ export function NarrativeTransition({
   return (
     <div ref={chapterRef} style={{ height: `${scrollDistance}dvh` }}>
       <div className={`sticky top-0 h-dvh ${className}`}>
-        <animated.p
+        <animated.div
           // Anchored from the top (not vertically centered like the message
           // below) — at this size a 2-line wrap centered in the full
           // viewport pushes it down into the globe's horizon (raised to
           // ~40% of viewport height), overlapping the curve instead of
           // sitting in the open sky above it.
-          className="absolute inset-x-0 top-[20%] flex justify-center px-6 text-center"
+          className="absolute inset-x-0 top-[16%] flex flex-col items-center gap-4 px-6 text-center"
           style={{ opacity: captionOpacity }}
         >
           <span
-            className="font-display max-w-3xl text-3xl font-bold uppercase tracking-[0.08em] md:text-5xl"
+            className="font-display max-w-4xl text-balance font-bold uppercase tracking-[0.08em]"
             style={{
-              background: "var(--gradient-cta)",
+              // Fluid instead of stepped breakpoints — scales continuously
+              // with viewport width instead of jumping at md, and reads at
+              // roughly 1.5x the previous fixed 3rem/5rem sizes.
+              fontSize: "clamp(2.25rem, 6vw, 4.5rem)",
+              // --gradient-cta's dark navy/steel stops (tuned for buttons on
+              // solid/glass backgrounds) disappear against this section's
+              // own dark sky — --gradient-hero keeps every stop bright.
+              // The two drop-shadows (dark for grounding against the bright
+              // parts of the sky, cyan for the "más llamativo" glow) work
+              // because filter: drop-shadow() reads the element's alpha
+              // mask, so it still outlines the glyph shapes even though
+              // their fill comes from background-clip, not `color`.
+              background: "var(--gradient-hero)",
               WebkitBackgroundClip: "text",
               backgroundClip: "text",
               color: "transparent",
+              filter:
+                "drop-shadow(0 2px 18px rgba(8,17,31,0.55)) drop-shadow(0 0 44px rgba(34,211,238,0.3))",
             }}
           >
             {caption}
           </span>
-        </animated.p>
+          {/* Fades with the caption (shares captionOpacity) — visible on
+              arrival, gone by the time the user has scrolled past it. */}
+          <span
+            className="max-w-xl text-balance font-medium text-white/85 italic"
+            style={{ fontSize: "clamp(0.95rem, 2.2vw, 1.375rem)" }}
+          >
+            “La educación es el arma más poderosa que puedes usar para
+            cambiar el mundo.”
+          </span>
+          <span
+            className="text-white/50 uppercase tracking-[0.14em]"
+            style={{ fontSize: "clamp(0.7rem, 1.4vw, 0.875rem)" }}
+          >
+            — Nelson Mandela
+          </span>
+        </animated.div>
         <animated.p
           className="font-display absolute inset-0 flex items-center justify-center px-6 text-center text-2xl font-bold text-white md:text-4xl"
           style={{
