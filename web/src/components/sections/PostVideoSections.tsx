@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import PhotoGlobe from "@/components/PhotoGlobe";
 import { NarrativeTransition } from "@/components/common/NarrativeTransition";
+import { WhyVmaSection } from "./WhyVmaSection";
 import { ValoresSection } from "./ValoresSection";
 import { ImpactoPuenteSection } from "./ImpactoPuenteSection";
 import { ContactoSection } from "./ContactoSection";
@@ -111,6 +112,7 @@ export function PostVideoSections() {
             Cada proyecto comienza con un propósito.
           </p>
         </section>
+        <WhyVmaSection />
         <ValoresSection />
         <ImpactoPuenteSection />
         <ContactoSection />
@@ -146,6 +148,7 @@ export function PostVideoSections() {
           }}
         />
 
+        <WhyVmaSection />
         <ValoresSection />
         <ImpactoPuenteSection />
         <ContactoSection />

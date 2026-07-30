@@ -10,6 +10,13 @@
  * - The 4-phase 2025–2030 roadmap (slides 12–15) — investor-deck detail,
  *   not landing-page copy.
  * - Director/officer names — not listed in any source document.
+ *
+ * `whyVma` below is sourced from `OBJETO SOCIAL VMA.docx` — the SAS's own
+ * constituted corporate purpose (items j and ñ), not restated marketing
+ * language. Deliberately NOT sourced from `PRESENTACIÓN EJECUTIVA.docx`
+ * (a draft pitch deck for a separate/unconfirmed "VMA Global Capital
+ * Holding LLC" entity in Dubai, with unfilled placeholders and unlicensed
+ * return projections) — none of that belongs on a public page.
  */
 
 import {
@@ -20,6 +27,7 @@ import {
   ShieldCheck,
   Handshake,
   Building2,
+  ClipboardCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -109,5 +117,36 @@ export const coreValues: CoreValue[] = [
     body: "Prácticas sostenibles y éticas en cada iniciativa.",
     icon: Building2,
     image: "/img/cards/rse.jpg",
+  },
+];
+
+export type Differentiator = {
+  title: string;
+  body: string;
+  icon: LucideIcon;
+};
+
+/**
+ * Why VMA specifically — not principles (see `coreValues`), but the
+ * concrete structural reasons a project executes and stays auditable.
+ * Grounded in the SAS's own constituted objeto social (items j and ñ),
+ * not marketing language: it's what VMA is legally set up to do, not just
+ * what it says it values.
+ */
+export const whyVma: Differentiator[] = [
+  {
+    title: "Ejecución, no intermediación",
+    body: "Cada alianza se traduce en un proyecto ejecutado — no en un compromiso que se diluye entre informes de avance.",
+    icon: ClipboardCheck,
+  },
+  {
+    title: "Puente legal, no informal",
+    body: "El objeto social de VMA la constituye para operar como puente entre la comunidad, la empresa privada y el Estado — no es una posición de marketing, es su naturaleza jurídica.",
+    icon: Handshake,
+  },
+  {
+    title: "Auditoría, no solo transparencia declarada",
+    body: "VMA tiene mandato constitutivo para adelantar interventoría y auditoría social y empresarial sobre el manejo de los recursos — propios y de terceros.",
+    icon: ShieldCheck,
   },
 ];
