@@ -47,6 +47,26 @@ procesados por Wompi" badge is a text/icon placeholder, not Wompi's actual
 logo (no official asset available) — swap it for the real one from Wompi's
 brand kit once there's a merchant account.
 
+# Legal footer popups (Habeas Data / PQR) + cookie notice
+
+`content/legal.ts` has the real text — Habeas Data is sourced verbatim
+from VMA's actual "POLÍTICA DE HABEAS DATA VMA.pdf" (responsable, correo
+`habeasdata@desarrolloeinnovacionvma.com.co`, derechos del titular); PQR
+had no source document, so it's composed from Ley 1755 de 2015's response
+terms (15 días hábiles general, 10 días for information requests) using
+the same contact email. `LegalModal` (`components/common/LegalModal.tsx`)
+is a generic version of AuthModal's glass-modal pattern (same
+backdrop+panel Spring, portal to body, Escape/scroll-lock) for read-only
+scrollable content instead of a form — reuse it for any future legal
+text, don't build a new modal shell.
+
+`CookieNotice` (`components/common/CookieNotice.tsx`, mounted in
+`layout.tsx`) is informational only, not a consent gate — this site has
+no analytics/marketing cookies, only the login's own session cookie
+(created solely on active login, never on page load). Dismissal persists
+via `localStorage`. If a real tracking/analytics script is ever added,
+this stops being sufficient and needs to become an actual opt-in gate.
+
 # Attention Director (PhotoGlobe)
 
 `src/lib/attention-director.ts` — a small state machine, not a React hook

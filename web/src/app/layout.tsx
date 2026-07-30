@@ -4,6 +4,7 @@ import { AdaptiveGrid } from "@/components/common/grid";
 import { ReducedMotion } from "@/components/common/reduced-motion";
 import { ScrollLayout } from "@/layouts/scroll-layout";
 import SiteHeader from "@/components/SiteHeader";
+import { CookieNotice } from "@/components/common/CookieNotice";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -76,6 +77,7 @@ export default function RootLayout({
           <ReducedMotion />
           <SiteHeader />
           {children}
+          <CookieNotice />
         </ScrollLayout>
       </body>
     </html>
