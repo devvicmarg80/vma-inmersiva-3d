@@ -37,6 +37,11 @@ yarn-error.log*
 # vercel
 .vercel
 
+# sqlite db (auth: approved_users/accounts/sessions) — real user data,
+# never versioned. Seeded via scripts/import-users.mjs, persists on the
+# VPS across deploys since git never touches it.
+/data/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

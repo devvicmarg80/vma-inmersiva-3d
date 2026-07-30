@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Spring } from "@/components/animation/springs/spring";
 import { scrollTo } from "@/utils/scroll-to";
+import { AuthButton } from "@/components/auth/AuthButton";
 
 const links = [
   { href: "/", label: "Inicio" },
@@ -78,17 +79,20 @@ export default function SiteHeader() {
           })}
         </nav>
 
-        {/* Pointing "Invertir en VMA" at /contacto is a no-op on /contacto
-            itself — the form is already right there. */}
-        {!onContactPage && (
-          <Link
-            href="/contacto"
-            className="hidden rounded-full px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-black/20 transition-opacity duration-[var(--duration-fast)] ease-entrance hover:opacity-90 md:inline-block"
-            style={{ background: "var(--gradient-cta)" }}
-          >
-            Invertir en VMA
-          </Link>
-        )}
+        <div className="hidden items-center gap-3 md:flex">
+          <AuthButton />
+          {/* Pointing "Invertir en VMA" at /contacto is a no-op on /contacto
+              itself — the form is already right there. */}
+          {!onContactPage && (
+            <Link
+              href="/contacto"
+              className="rounded-full px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-black/20 transition-opacity duration-[var(--duration-fast)] ease-entrance hover:opacity-90"
+              style={{ background: "var(--gradient-cta)" }}
+            >
+              Invertir en VMA
+            </Link>
+          )}
+        </div>
 
         <button
           type="button"
@@ -142,6 +146,7 @@ export default function SiteHeader() {
                 Invertir en VMA
               </Link>
             )}
+            <AuthButton className="mt-2 w-full" />
           </div>
         </Spring>
       )}
