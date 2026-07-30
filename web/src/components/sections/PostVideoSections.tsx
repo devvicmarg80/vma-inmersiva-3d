@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import PhotoGlobe from "@/components/PhotoGlobe";
 import { NarrativeTransition } from "@/components/common/NarrativeTransition";
 import { ValoresSection } from "./ValoresSection";
+import { ImpactoPuenteSection } from "./ImpactoPuenteSection";
 import { ContactoSection } from "./ContactoSection";
 import { SiteFooter } from "./SiteFooter";
 
@@ -111,6 +112,7 @@ export function PostVideoSections() {
           </p>
         </section>
         <ValoresSection />
+        <ImpactoPuenteSection />
         <ContactoSection />
         <SiteFooter />
       </>
@@ -145,6 +147,7 @@ export function PostVideoSections() {
         />
 
         <ValoresSection />
+        <ImpactoPuenteSection />
         <ContactoSection />
         <SiteFooter />
       </div>
