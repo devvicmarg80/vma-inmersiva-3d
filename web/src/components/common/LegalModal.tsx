@@ -39,6 +39,11 @@ export function LegalModal({
 
   if (!open) return null;
 
+  // Split so a forced line-break lands right after the "@" (the natural
+  // place to break an email) instead of break-all picking an arbitrary
+  // point mid-word on narrow screens.
+  const [emailLocal, emailDomain] = doc.contactEmail.split("@");
+
   return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center px-6"
@@ -106,10 +111,20 @@ export function LegalModal({
         <div className="border-t border-white/10 p-6 pt-4">
           <a
             href={`mailto:${doc.contactEmail}`}
-            className="block w-full rounded-full px-6 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-black/20 transition-opacity duration-[var(--duration-fast)] ease-entrance hover:opacity-90"
+            // rounded-2xl, not rounded-full — this email is long enough that
+            // a pill shape's curved ends cut into the text on narrow mobile
+            // screens (confirmed via a live screenshot). break-words is a
+            // safety net for even narrower viewports; the <wbr/> after "@"
+            // gives it a natural break point to prefer over an arbitrary
+            // mid-word one.
+            className="block w-full rounded-2xl px-6 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-black/20 transition-opacity duration-[var(--duration-fast)] ease-entrance hover:opacity-90"
             style={{ background: "var(--gradient-cta)" }}
           >
-            Escribir a {doc.contactEmail}
+            Escribir a{" "}
+            <span className="break-words">
+              {emailLocal}@<wbr />
+              {emailDomain}
+            </span>
           </a>
         </div>
       </Spring>
