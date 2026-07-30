@@ -116,6 +116,36 @@ own). If a future feature wants to add more per-frame visual state here,
 extend this same direct-DOM pattern rather than reintroducing setState in
 the hot path.
 
+# Adaptive scaling grid — mobile tier holds a flat 16px
+
+`src/app/globals.css`'s `html { font-size }` media-query ladder (see
+`grid.config.ts` for the full rationale) scales the root font-size so a
+rem-based layout stays proportional across viewports. The ≤640px tier used
+to follow the same `baseWidth === maxWidth` formula as the tiers above it
+(`2.5vw`, i.e. `16 * 100 / 640`) — but that formula only equals 16px right
+at the 640px edge, and no real phone is 640px wide, so every actual phone
+landed below it (a 390px phone measured 9.75px root font-size — confirmed
+live via `getComputedStyle`, not assumed). Every `rem`-based Tailwind
+text-* class sitewide was rendering at ~60% of its authored size on
+mobile — this was the root cause of the "mobile font is too small /
+white text is unreadable" report, not a per-component sizing issue. Fixed
+by holding that tier at a flat `16px` instead of continuing the vw
+formula; the 1024/1440/1920 tiers are untouched (those correspond to real
+desktop/tablet viewports scaling proportionally and weren't reported
+broken). If you add a new breakpoint below 640px, keep it flat too — don't
+reach for `Nvw` there.
+
+Fixing this uncovered one real layout side effect: `ScrollExperience`'s
+"territorio" act (5 stacked pillar cards) was tall enough, at now-correct
+font sizes, to push its tag/headline behind the fixed `SiteHeader` on a
+390px viewport. Fixed with two changes scoped to that act only: the
+pillars grid is `grid-cols-2` from the start (not just `sm:`), and the act
+wrapper has `pt-20 sm:pt-0` so content centers below the header instead of
+across it. Confirmed via live `getBoundingClientRect()` measurements
+(header height, content top/bottom vs viewport), not just a screenshot.
+If a future act's content ever gets this tall again on mobile, re-check
+the same way rather than assuming centering alone is safe.
+
 # HeroStarfield
 
 `components/HeroStarfield.tsx`, mounted in `ScrollExperience.tsx` right

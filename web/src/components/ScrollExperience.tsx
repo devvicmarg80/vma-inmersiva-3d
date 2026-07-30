@@ -306,7 +306,11 @@ export default function ScrollExperience() {
                 ref={(el) => {
                   actRefs.current[i] = el;
                 }}
-                className="absolute inset-0 flex items-center justify-center px-6"
+                // pt-20 (~header height) so a content-heavy act (e.g. the
+                // 5-pillar grid) centers within the space below the fixed
+                // header instead of overlapping it — confirmed via a live
+                // header height measurement (81px at 390px viewport).
+                className="absolute inset-0 flex items-center justify-center px-6 pt-20 sm:pt-0"
                 style={{
                   opacity: initialOpacity,
                   pointerEvents: initialOpacity > 0.5 ? "auto" : "none",
@@ -336,7 +340,7 @@ function ScrollHint({ visible }: { visible: boolean }) {
       <div className="flex h-9 w-6 items-start justify-center rounded-full border-2 border-white/50 p-1">
         <div className="h-1.5 w-1.5 rounded-full bg-white/80 animate-scroll-hint-dot" />
       </div>
-      <p className="text-[10px] uppercase tracking-[0.14em] text-white/60">
+      <p className="text-xs uppercase tracking-[0.14em] text-white/70">
         Desplázate para explorar
       </p>
     </div>
@@ -353,7 +357,7 @@ function ActContent({
   const HeadlineTag = isFirst ? "h1" : "h2";
   return (
     <div className="max-w-4xl w-full text-center">
-      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/30 px-3.5 py-1.5 text-xs uppercase tracking-[0.14em] text-white/80 backdrop-blur-sm sm:text-sm">
+      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/30 px-3.5 py-1.5 text-sm uppercase tracking-[0.14em] text-white/85 backdrop-blur-sm sm:text-base">
         {act.tag}
       </div>
       {act.eyebrow && (
@@ -382,7 +386,7 @@ function ActContent({
               key={s.label}
               className="rounded-lg border border-white/10 bg-black/40 px-4 py-4 backdrop-blur-sm"
             >
-              <dt className="text-xs uppercase tracking-wide text-white/60 sm:text-sm">
+              <dt className="text-sm uppercase tracking-wide text-white/75 sm:text-base">
                 {s.label}
               </dt>
               <dd className="mt-1 text-2xl font-semibold text-white tabular-nums sm:text-3xl">
@@ -394,13 +398,18 @@ function ActContent({
       )}
 
       {act.pillars && (
-        <ul className="grid gap-4 text-left mb-6 sm:grid-cols-2">
+        // grid-cols-2 from the start (not just sm:) — with real (post font-size
+        // fix) mobile type sizes, 5 stacked full-width cards ran taller than
+        // one viewport and pushed the tag/headline behind the fixed header.
+        // Two columns keeps this act's content within the viewport with the
+        // header safely clear, confirmed via a live height measurement.
+        <ul className="grid grid-cols-2 gap-2.5 text-left mb-6 sm:gap-4">
           {act.pillars.map((p) => (
             <li
               key={p.label}
-              className="rounded-lg border border-white/10 bg-black/40 px-5 py-4 backdrop-blur-sm"
+              className="rounded-lg border border-white/10 bg-black/40 px-3 py-3 backdrop-blur-sm sm:px-5 sm:py-4"
             >
-              <p className="text-base font-semibold text-white mb-1.5 sm:text-lg">
+              <p className="text-base font-semibold text-white mb-1 sm:text-lg sm:mb-1.5">
                 {p.label}
               </p>
               <p className="text-sm text-white/75 sm:text-base">{p.body}</p>

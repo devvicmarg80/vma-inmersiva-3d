@@ -172,9 +172,20 @@
     }
   }
 
+  /* The mobile tier deliberately does NOT follow the same baseWidth===maxWidth
+     formula as the tiers above (which would be `2.5vw`, i.e. 16 * 100 / 640).
+     That formula only reaches the intended 16px right at the 640px edge — every
+     real phone is narrower than 640px, so it always lands below 16px (a 390px
+     phone got 9.75px root font-size, shrinking every rem-based text-* class in
+     the app to ~60% of its authored value). Unlike the 1024/1440/1920 tiers,
+     which correspond to real desktop/tablet viewports scaling proportionally,
+     there's no real device at 640px CSS width to scale "down from" — so this
+     tier holds a flat FONT_BASE instead of continuing the vw formula. Confirmed
+     via a live measurement before this fix: h1 rendered at 18px instead of the
+     authored 30px (text-3xl) at a 390px viewport. */
   @media (max-width: 640px) {
     html {
-      font-size: 2.5vw; /* 16 * 100 / 640 */
+      font-size: 16px;
     }
   }
 }
