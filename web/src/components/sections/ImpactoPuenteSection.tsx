@@ -7,32 +7,19 @@ import { acts } from "@/content/copy";
 /**
  * Bridge between "Valores corporativos" and the contact form — the story
  * so far has been principles (Valores); this section is proof before the
- * ask, a real photo + the same measured Red Viva numbers already seeded
- * during the video hero, reinforced right before the CTA instead of only
- * appearing once, early, during scroll-jacking. Stats pulled from
- * content/copy.ts (not restated) so the two never drift apart.
+ * ask, the same measured Red Viva numbers already seeded during the video
+ * hero, reinforced right before the CTA instead of only appearing once,
+ * early, during scroll-jacking. Stats pulled from content/copy.ts (not
+ * restated) so the two never drift apart. Transparent background, like
+ * every other post-video section — the globe stays the only backdrop.
  */
 export function ImpactoPuenteSection() {
   const impact = acts.find((a) => a.id === "red-viva");
   if (!impact?.stats) return null;
 
   return (
-    <section className="relative scroll-mt-24 overflow-hidden px-6 py-20 md:py-28">
-      <img
-        src={impact.poster}
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full object-cover"
-      />
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(11,26,46,0.88) 0%, rgba(11,26,46,0.78) 40%, rgba(11,26,46,0.92) 100%)",
-        }}
-      />
-
-      <div className="relative z-10 mx-auto max-w-4xl">
+    <section className="scroll-mt-24 bg-transparent px-6 py-20 md:py-28">
+      <div className="mx-auto max-w-4xl">
         <SectionHeading
           eyebrow="Resultados en el territorio"
           align="center"
