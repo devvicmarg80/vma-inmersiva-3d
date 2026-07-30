@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VMA Inmersiva 3D
 
-## Getting Started
+Landing page de VMA Grupo Empresarial de Desarrollo e Innovación S.A.S. — Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4.
 
-First, run the development server:
+Ver **`AGENTS.md`** para las notas de arquitectura (sistema de auth/login, la página de precios + Wompi, el Attention Director del globo) — este README solo cubre cómo correr y desplegar el proyecto.
+
+## Desarrollo local
 
 ```bash
+npm install
+cp .env.example .env.local   # completar las variables que apliquen
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abrir [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Variables de entorno
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Ver `.env.example` para la lista completa y su documentación. Ninguna es obligatoria para levantar el sitio localmente — sin configurarlas, el formulario de contacto solo loguea en servidor y los botones de pago de `/precios` caen a un enlace de contacto en vez de un checkout real.
 
-## Learn More
+## Base de datos (login / `/portal`)
 
-To learn more about Next.js, take a look at the following resources:
+Usa `node:sqlite` (built-in de Node, sin dependencias) — el archivo vive en `data/app.db`, se crea solo, y está gitignored (contiene datos reales de usuarios). Para cargar la lista de usuarios aprobados desde un export de la hoja real de registros:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+node scripts/import-users.mjs ruta/al/export.csv
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Build y despliegue
 
-## Deploy on Vercel
+```bash
+npm run build
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+En producción (VPS + PM2, no Vercel):
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+git pull origin main
+cd web && npm install && npm run build
+pm2 restart vma-inmersiva-3d   # nunca "pm2 restart all" — el VPS corre otros procesos
+```

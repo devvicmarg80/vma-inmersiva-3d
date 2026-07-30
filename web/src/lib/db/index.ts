@@ -1,5 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
-import { mkdirSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 /**
@@ -20,7 +20,13 @@ export function getDb(): DatabaseSync {
   if (instance) return instance;
 
   mkdirSync(dirname(DB_PATH), { recursive: true });
+  const isNewFile = !existsSync(DB_PATH);
   instance = new DatabaseSync(DB_PATH);
+  // The file holds password hashes + real PII (email, documento) — force
+  // owner-only permissions regardless of the process umask, so a fresh
+  // deploy/recreate never silently regresses to a world-readable file
+  // (this is exactly the gap that let it sit at 644 on the VPS before).
+  if (isNewFile) chmodSync(DB_PATH, 0o600);
   instance.exec(`
     CREATE TABLE IF NOT EXISTS approved_users (
       email TEXT PRIMARY KEY,

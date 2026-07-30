@@ -7,6 +7,7 @@ export const metadata = pageMetadata({
   title: "Contacto · VMA",
   description:
     "Escríbenos si buscas invertir en VMA o convertirte en aliado estratégico.",
+  path: "/contacto",
 });
 
 export default function ContactoPage() {

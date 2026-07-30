@@ -9,6 +9,7 @@ export const metadata = pageMetadata({
   title: "Precios · VMA",
   description:
     "Servicios de VMA para empresarios y aliados: capacitación, alianzas estratégicas y auditoría.",
+  path: "/precios",
 });
 
 export default function PreciosPage() {

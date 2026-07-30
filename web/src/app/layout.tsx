@@ -43,6 +43,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://vma-inmersiva-3d.grupoempresarialvicmarg.com"),
   title,
   description,
+  alternates: { canonical: "/" },
   openGraph: {
     title,
     description,

@@ -31,8 +31,11 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — .env.example is the documented template, meant to be
+# committed (no real secrets in it, just the list of variables and what
+# they're for); everything else stays local/VPS-only.
 .env*
+!.env.example
 
 # vercel
 .vercel

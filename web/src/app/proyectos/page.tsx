@@ -20,6 +20,7 @@ export const metadata = pageMetadata({
   title: "Proyectos e impacto · VMA",
   description:
     "Cómo trabaja VMA — alianzas, áreas de acción y cómo medimos el impacto en Colombia y América Latina.",
+  path: "/proyectos",
 });
 
 const kpiCategories = [

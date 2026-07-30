@@ -2,17 +2,18 @@ import type { MetadataRoute } from "next";
 
 const SITE_URL = "https://vma-inmersiva-3d.grupoempresarialvicmarg.com";
 
-/**
- * Generates /sitemap.xml. Currently lists only the home route — add an
- * entry per public route as the site grows beyond a single page.
- */
+// Public, indexable routes only — /portal is login-gated (its own metadata
+// already sets robots: noindex) and /api/* isn't a page. Add an entry here
+// whenever a new public route/page is created.
+const ROUTES = ["", "/nosotros", "/proyectos", "/precios", "/contacto"];
+
+/** Generates /sitemap.xml. */
 export default function sitemap(): MetadataRoute.Sitemap {
-  return [
-    {
-      url: SITE_URL,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 1,
-    },
-  ];
+  const lastModified = new Date();
+  return ROUTES.map((path) => ({
+    url: `${SITE_URL}${path}`,
+    lastModified,
+    changeFrequency: "monthly",
+    priority: path === "" ? 1 : 0.8,
+  }));
 }

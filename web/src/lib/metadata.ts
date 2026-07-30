@@ -14,13 +14,18 @@ const OG_IMAGE = { url: "/img/og-image.jpg", width: 1200, height: 630 };
 export function pageMetadata({
   title,
   description,
+  path = "",
 }: {
   title: string;
   description: string;
+  /** Route path (e.g. "/precios") — resolved against `metadataBase` (set
+   * in layout.tsx) into the page's canonical URL. Omit for the home page. */
+  path?: string;
 }): Metadata {
   return {
     title,
     description,
+    alternates: { canonical: path || "/" },
     openGraph: {
       title,
       description,

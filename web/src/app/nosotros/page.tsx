@@ -12,6 +12,7 @@ export const metadata = pageMetadata({
   title: "Nosotros · VMA",
   description:
     "Misión, visión y valores de VMA Grupo Empresarial de Desarrollo e Innovación S.A.S.",
+  path: "/nosotros",
 });
 
 export default function NosotrosPage() {

@@ -332,8 +332,8 @@ function ActContent({
 }) {
   const HeadlineTag = isFirst ? "h1" : "h2";
   return (
-    <div className="max-w-3xl w-full text-center">
-      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/80 backdrop-blur-sm">
+    <div className="max-w-4xl w-full text-center">
+      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/30 px-3.5 py-1.5 text-xs uppercase tracking-[0.14em] text-white/80 backdrop-blur-sm sm:text-sm">
         {act.tag}
       </div>
       {act.eyebrow && (
@@ -356,16 +356,16 @@ function ActContent({
       )}
 
       {act.stats && (
-        <dl className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6 max-w-2xl mx-auto">
+        <dl className="grid grid-cols-1 gap-3 mb-6 max-w-3xl mx-auto sm:grid-cols-2 sm:gap-4 md:grid-cols-4">
           {act.stats.map((s) => (
             <div
               key={s.label}
-              className="rounded-lg border border-white/10 bg-black/40 px-3 py-3 backdrop-blur-sm"
+              className="rounded-lg border border-white/10 bg-black/40 px-4 py-4 backdrop-blur-sm"
             >
-              <dt className="text-[11px] uppercase tracking-wide text-white/60">
+              <dt className="text-xs uppercase tracking-wide text-white/60 sm:text-sm">
                 {s.label}
               </dt>
-              <dd className="text-xl font-semibold text-white tabular-nums">
+              <dd className="mt-1 text-2xl font-semibold text-white tabular-nums sm:text-3xl">
                 {s.value}
               </dd>
             </div>
@@ -374,16 +374,16 @@ function ActContent({
       )}
 
       {act.pillars && (
-        <ul className="grid sm:grid-cols-2 gap-4 text-left mb-6">
+        <ul className="grid gap-4 text-left mb-6 sm:grid-cols-2">
           {act.pillars.map((p) => (
             <li
               key={p.label}
-              className="rounded-lg border border-white/10 bg-black/40 px-4 py-3 backdrop-blur-sm"
+              className="rounded-lg border border-white/10 bg-black/40 px-5 py-4 backdrop-blur-sm"
             >
-              <p className="text-sm font-semibold text-white mb-1">
+              <p className="text-base font-semibold text-white mb-1.5 sm:text-lg">
                 {p.label}
               </p>
-              <p className="text-sm text-white/75">{p.body}</p>
+              <p className="text-sm text-white/75 sm:text-base">{p.body}</p>
             </li>
           ))}
         </ul>
