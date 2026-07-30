@@ -98,6 +98,24 @@ temporarily shortening the gap constants and confirming via CDP
 screenshots that a comet actually renders — remember to restore the real
 gap values if you do that again, don't leave the shortened ones in.
 
+# ScrollExperience — act opacity is DOM, not React state
+
+`components/ScrollExperience.tsx`'s scroll-driven video (`tick`, inside
+the main non-reduced-motion `useEffect`) writes each act's
+opacity/pointer-events/transform straight to its DOM node via a ref array
+(`actRefs`), not `useState`. It used to be `setActiveStyles` on every
+`requestAnimationFrame` tick — measured via CDP with mobile device metrics
++ `Emulation.setCPUThrottlingRate(4)` (simulating a mid/low-end phone):
+~60% of frames missed the 16.6ms/60fps budget (avg 27ms/frame). Routing
+that same per-frame value through DOM refs instead of React state dropped
+it to ~10% (avg ~18ms/frame, confirmed again against a production build).
+This was the fix for the "scroll lags on mobile" report — not the video
+seeking itself (already reasonably cheap; keyframes every ~6 frames) and
+not `HeroStarfield`/`CursorDistortion` (separate canvases, cheap on their
+own). If a future feature wants to add more per-frame visual state here,
+extend this same direct-DOM pattern rather than reintroducing setState in
+the hot path.
+
 # HeroStarfield
 
 `components/HeroStarfield.tsx`, mounted in `ScrollExperience.tsx` right
