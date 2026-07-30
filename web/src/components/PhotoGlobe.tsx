@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createAttentionDirector, type AttentionMultipliers } from "@/lib/attention-director";
 
 /**
  * Photoreal Earth (NASA Blue Marble composite, public domain) rendered by
@@ -160,6 +161,7 @@ const SATELLITE_ORBITS = SATELLITES.map(satelliteOrbitRing);
 export default function PhotoGlobe({
   progressRef,
   glowBoostRef,
+  attentionDirector = true,
   className = "",
 }: {
   /** 0..1, mutated directly by the parent's own scroll rAF loop — read
@@ -169,6 +171,11 @@ export default function PhotoGlobe({
    * atmospheric glow's alpha up slightly (see GLOW_BOOST_MAX below).
    * Omitted by every caller except PostVideoSections' narrative chapter. */
   glowBoostRef?: React.RefObject<number>;
+  /** Subtle randomized emphasis cycling across the scene's layers — see
+   * src/lib/attention-director.ts. On by default since every caller wants
+   * "the same living scene"; the escape hatch exists for a future instance
+   * that shouldn't have it without touching this file. */
+  attentionDirector?: boolean;
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -181,6 +188,13 @@ export default function PhotoGlobe({
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    // Same 640px tier as useMagneticCard's mobile cutoff — "graceful
+    // degradation on mobile" satisfied by not running at all there.
+    const attention = createAttentionDirector({
+      reduceMotion,
+      disabled: !attentionDirector || window.innerWidth < 640,
+    });
 
     let W = 0, H = 0, R0 = 0;
     let R = 0, cx = 0, cy = 0;
@@ -225,20 +239,20 @@ export default function PhotoGlobe({
       stars.push({ x: Math.random(), y: Math.random(), r: Math.random() * 1.1 + 0.2, a: Math.random() * 0.5 + 0.12 });
     }
 
-    function drawSpaceBackground(now: number) {
+    function drawSpaceBackground(now: number, attn: AttentionMultipliers) {
       const neb1 = ctx!.createRadialGradient(W * 0.15, H * 0.2, 0, W * 0.15, H * 0.2, W * 0.4);
-      neb1.addColorStop(0, "rgba(63,90,160,0.10)");
+      neb1.addColorStop(0, `rgba(63,90,160,${0.1 * attn.nebula})`);
       neb1.addColorStop(1, "rgba(63,90,160,0)");
       ctx!.fillStyle = neb1;
       ctx!.fillRect(0, 0, W, H);
       const neb2 = ctx!.createRadialGradient(W * 0.85, H * 0.15, 0, W * 0.85, H * 0.15, W * 0.35);
-      neb2.addColorStop(0, "rgba(140,80,120,0.08)");
+      neb2.addColorStop(0, `rgba(140,80,120,${0.08 * attn.nebula})`);
       neb2.addColorStop(1, "rgba(140,80,120,0)");
       ctx!.fillStyle = neb2;
       ctx!.fillRect(0, 0, W, H);
 
       stars.forEach((st) => {
-        ctx!.globalAlpha = st.a;
+        ctx!.globalAlpha = st.a * attn.stars;
         ctx!.fillStyle = "#dfe8f2";
         ctx!.beginPath();
         ctx!.arc(st.x * W, st.y * H, st.r, 0, Math.PI * 2);
@@ -292,10 +306,17 @@ export default function PhotoGlobe({
       return { sx: cx + p.x * R, sy: cy + p.y * R, z: p.z };
     }
 
-    function drawSatellites(now: number, rotY: number, rotX: number, wantFront: boolean) {
+    function drawSatellites(
+      now: number,
+      rotY: number,
+      rotX: number,
+      wantFront: boolean,
+      attn: AttentionMultipliers,
+    ) {
       SATELLITES.forEach((sat, idx) => {
         const ring = SATELLITE_ORBITS[idx];
-        ctx!.strokeStyle = wantFront ? "rgba(95,227,247,0.3)" : "rgba(95,227,247,0.06)";
+        const ringAlpha = (wantFront ? 0.3 : 0.06) * attn.orbitalRings;
+        ctx!.strokeStyle = `rgba(95,227,247,${ringAlpha})`;
         ctx!.lineWidth = 1;
         ctx!.beginPath();
         let started = false;
@@ -314,7 +335,7 @@ export default function PhotoGlobe({
         const pp2 = project(r2);
 
         const g = ctx!.createRadialGradient(pp2.sx, pp2.sy, 0, pp2.sx, pp2.sy, 7);
-        g.addColorStop(0, "rgba(95,227,247,0.5)");
+        g.addColorStop(0, `rgba(95,227,247,${0.5 * attn.energyNetwork})`);
         g.addColorStop(1, "rgba(95,227,247,0)");
         ctx!.fillStyle = g;
         ctx!.beginPath();
@@ -500,6 +521,15 @@ export default function PhotoGlobe({
     canvas.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
 
+    // Attention Director: any real page interaction suspends the emphasis
+    // cycle immediately (window-level, not canvas-only — scrolling or
+    // typing anywhere on the page counts, not just touching the globe).
+    const onInteraction = () => attention.registerInteraction();
+    window.addEventListener("scroll", onInteraction, { passive: true });
+    window.addEventListener("pointermove", onInteraction, { passive: true });
+    window.addEventListener("keydown", onInteraction);
+    window.addEventListener("touchstart", onInteraction, { passive: true });
+
     // ---- pause the whole loop while off-screen (saves CPU/battery once the
     // visitor has scrolled well past this section) ----
     let inView = true;
@@ -527,6 +557,12 @@ export default function PhotoGlobe({
       }
       lastFrameAt = now;
 
+      // Attention Director — reads the same `now` this frame already has,
+      // ticks inside this existing loop (no second RAF). Baseline
+      // multipliers (all 1) whenever it's inert/idle/mid-interaction, so
+      // this is a no-op in the common case.
+      const attn = attention.update(now);
+
       const spinNow = reduceMotion ? 0 : now;
       const progress = progressRef.current ?? 0;
       const kf = keyframeAt(progress);
@@ -540,14 +576,14 @@ export default function PhotoGlobe({
       const rotY = ROT_BASE + spinNow * SPIN_SPEED + dragYOffset;
 
       ctx.clearRect(0, 0, W, H);
-      drawSpaceBackground(spinNow);
+      drawSpaceBackground(spinNow, attn);
 
       // Sunrise-over-Earth brightening, nudged further by the narrative
       // chapter's scroll progress when present. Saturated cyan (matching the
       // site's --cyan accent) instead of the earlier near-white — the
       // near-white version read as barely-there next to a starfield this
       // dark, which was part of why the whole chapter looked empty.
-      const glowAlpha = 0.4 + (glowBoostRef?.current ?? 0) * GLOW_BOOST_MAX;
+      const glowAlpha = (0.4 + (glowBoostRef?.current ?? 0) * GLOW_BOOST_MAX) * attn.atmosphere;
       const glow = ctx.createRadialGradient(cx, cy, R * 0.55, cx, cy, R * 1.5);
       glow.addColorStop(0, `rgba(56,208,255,${glowAlpha})`);
       glow.addColorStop(1, "rgba(56,208,255,0)");
@@ -556,7 +592,7 @@ export default function PhotoGlobe({
       ctx.arc(cx, cy, R * 1.5, 0, Math.PI * 2);
       ctx.fill();
 
-      drawSatellites(spinNow, rotY, rotX, false);
+      drawSatellites(spinNow, rotY, rotX, false, attn);
 
       if (texReady) {
         renderSphere(rotY, rotX, qualityScale);
@@ -569,14 +605,14 @@ export default function PhotoGlobe({
 
       const rim = ctx.createRadialGradient(cx, cy, R * 0.9, cx, cy, R * 1.04);
       rim.addColorStop(0, "rgba(94,220,255,0)");
-      rim.addColorStop(1, "rgba(94,220,255,0.8)");
+      rim.addColorStop(1, `rgba(94,220,255,${0.8 * attn.rim})`);
       ctx.strokeStyle = rim;
       ctx.lineWidth = 5;
       ctx.beginPath();
       ctx.arc(cx, cy, R, 0, Math.PI * 2);
       ctx.stroke();
 
-      drawSatellites(spinNow, rotY, rotX, true);
+      drawSatellites(spinNow, rotY, rotX, true, attn);
 
       const hp = rotate(HOME, rotY, rotX);
       if (hp.z > -0.05) {
@@ -618,8 +654,12 @@ export default function PhotoGlobe({
       canvas!.removeEventListener("pointerdown", onPointerDown);
       canvas!.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("scroll", onInteraction);
+      window.removeEventListener("pointermove", onInteraction);
+      window.removeEventListener("keydown", onInteraction);
+      window.removeEventListener("touchstart", onInteraction);
     };
-  }, [progressRef, glowBoostRef]);
+  }, [progressRef, glowBoostRef, attentionDirector]);
 
   return (
     <canvas

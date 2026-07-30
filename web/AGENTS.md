@@ -46,3 +46,20 @@ is, `isWompiConfigured()` is `false` and every card's button links to
 procesados por Wompi" badge is a text/icon placeholder, not Wompi's actual
 logo (no official asset available) — swap it for the real one from Wompi's
 brand kit once there's a merchant account.
+
+# Attention Director (PhotoGlobe)
+
+`src/lib/attention-director.ts` — a small state machine, not a React hook
+or a new render loop. It ticks once per frame from inside `PhotoGlobe.tsx`'s
+existing `requestAnimationFrame` loop (`draw(now)` calls
+`attention.update(now)`), nudging 6 of PhotoGlobe's own draw values
+(nebula/star/atmosphere/rim/orbital-ring/satellite-glow alpha) by a tiny,
+randomized amount (1-3%) on a random 18-35s cycle. Suspends immediately on
+any page interaction (scroll/pointermove/keydown/touchstart, listened at
+`window` level), disabled entirely under `prefers-reduced-motion` or below
+a 640px viewport. Applies automatically everywhere `PhotoGlobe` renders
+(Home's post-video globe, and the `/nosotros`/`/proyectos`/`/contacto`
+hero backdrops via `HeroGlobeBackdrop`) — opt out per-instance with
+`<PhotoGlobe attentionDirector={false} />` if one of those ever shouldn't
+have it. Do not add a second RAF loop or a GSAP-style timeline for this —
+the whole point is it rides the loop that already exists.
