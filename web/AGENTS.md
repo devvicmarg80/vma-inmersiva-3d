@@ -97,3 +97,20 @@ for it. Respects `prefers-reduced-motion` (never spawns). Verified by
 temporarily shortening the gap constants and confirming via CDP
 screenshots that a comet actually renders — remember to restore the real
 gap values if you do that again, don't leave the shortened ones in.
+
+# HeroStarfield
+
+`components/HeroStarfield.tsx`, mounted in `ScrollExperience.tsx` right
+after `CursorDistortion`, rendering on top of both the Hero video and its
+distortion canvas. A transparent-background Canvas 2D overlay — twinkling
+stars plus an occasional comet (same hand-rolled comet shape as
+PhotoGlobe's, shorter gap/duration) — deliberately not sharing code with
+`PhotoGlobe.tsx` (different tuning problem: staying legible over
+*varying* video content across every act, space and terrain/community
+scenes alike, vs. PhotoGlobe owning its own opaque background). No
+third-party library, same reasoning as PhotoGlobe's comets. An earlier
+version also drew two faint hand-placed constellations; removed at the
+user's request after reviewing a screenshot preview — don't re-add them
+without checking first. Respects `prefers-reduced-motion` and pauses (via
+canvas opacity, no per-frame work) on tab-hidden/window-blur, same
+pattern as `CursorDistortion.tsx`.

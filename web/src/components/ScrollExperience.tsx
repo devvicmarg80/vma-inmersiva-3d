@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { acts } from "@/content/copy";
 import CursorDistortion from "./CursorDistortion";
+import HeroStarfield from "./HeroStarfield";
 
 const ACT_COUNT = acts.length;
 
@@ -261,6 +262,7 @@ export default function ScrollExperience() {
             className="absolute inset-0 h-full w-full object-cover"
           />
           {pointerFine && ready && <CursorDistortion videoRef={videoRef} />}
+          {ready && <HeroStarfield />}
           <div
             className="absolute inset-0"
             style={{
