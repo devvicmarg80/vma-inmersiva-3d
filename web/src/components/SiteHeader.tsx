@@ -11,6 +11,7 @@ const links = [
   { href: "/", label: "Inicio" },
   { href: "/nosotros", label: "Nosotros" },
   { href: "/proyectos", label: "Proyectos" },
+  { href: "/precios", label: "Precios" },
 ];
 
 export default function SiteHeader() {

@@ -28,3 +28,21 @@ Re-running it with a fresher export is safe (upserts by email).
 
 `web/data/app.db` holds real user data — gitignored (`/data/` in
 `web/.gitignore`), never commit it or anything derived from it.
+
+# Pricing page (/precios) + Wompi
+
+`content/pricing.ts` has the 3 services (capacitación, alianzas
+estratégicas, auditoría) — same differentiators as `whyVma` in
+`content/company.ts`, priced with **reference figures VMA hasn't confirmed**
+(shown as "Precio de referencia" in the UI, not final pricing). `PricingCard`
+reuses `useMagneticCard` (the same tilt/spotlight physics as `HudCard`) —
+see `src/hooks/useMagneticCard.ts`, don't rebuild that animation elsewhere.
+
+Payment goes through Wompi's Web Checkout (a redirect URL, no SDK — see
+`src/lib/wompi.ts`), gated on `NEXT_PUBLIC_WOMPI_PUBLIC_KEY`, which is
+**not set yet** (no Wompi merchant account as of this writing). Until it
+is, `isWompiConfigured()` is `false` and every card's button links to
+`/contacto` instead of a checkout that would fail. The "Pagos seguros
+procesados por Wompi" badge is a text/icon placeholder, not Wompi's actual
+logo (no official asset available) — swap it for the real one from Wompi's
+brand kit once there's a merchant account.
