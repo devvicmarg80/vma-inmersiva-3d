@@ -76,7 +76,7 @@ export function LegalModal({
           </button>
         </div>
 
-        <div className="overflow-y-auto p-6">
+        <div className="legal-scroll overflow-y-auto p-6">
           <p className="text-sm text-white/80">{doc.intro}</p>
 
           {doc.sections.map((section, i) => (
