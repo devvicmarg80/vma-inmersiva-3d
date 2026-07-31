@@ -5,6 +5,7 @@ import { ReducedMotion } from "@/components/common/reduced-motion";
 import { ScrollLayout } from "@/layouts/scroll-layout";
 import SiteHeader from "@/components/SiteHeader";
 import { CookieNotice } from "@/components/common/CookieNotice";
+import ScrollDebugOverlay from "@/components/ScrollDebugOverlay";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -78,6 +79,7 @@ export default function RootLayout({
           <SiteHeader />
           {children}
           <CookieNotice />
+          <ScrollDebugOverlay />
         </ScrollLayout>
       </body>
     </html>
