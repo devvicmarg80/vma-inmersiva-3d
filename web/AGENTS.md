@@ -140,27 +140,56 @@ own). If a future feature wants to add more per-frame visual state here,
 extend this same direct-DOM pattern rather than reintroducing setState in
 the hot path.
 
-**Catch-up rate is adaptive, not a fixed constant** (`catchUpRate` in the
-same `tick`). It used to be a flat `MAX_RATE = 2.2` (video-seconds/sec cap
-on how fast `displayedTime` eases toward the scroll-implied target) — fine
-when real scroll throughput stays near that pace, but Windows Chrome's
-default wheel-scroll step is a much bigger pixel jump per notch than
-macOS's trackpad scrolling, and the whole page is wrapped in Lenis
-(`layouts/scroll-layout.tsx`, `duration: 0.5`, `wheelMultiplier: 1.4`) —
-Lenis just multiplies whatever raw delta the browser reports, so a bigger
-native delta still produces a bigger real scroll velocity through it, not
-a normalized one. The fixed cap left a large, growing gap on fast
-Windows/Chrome scrolling, and the video kept auto-advancing at the capped
-rate well after the user's hand had stopped — reported as "the video runs
-ahead of my scrolling." Fixed by estimating actual scroll velocity
-(video-seconds implied per real second, each time the `dirty`-gated
-recompute runs) and EMA-smoothing it into `catchUpRate`, bounded to
-[1.4, 8] so a single large event can't make it feel instant. Verified by
-temporarily exposing it as `window.__debugCatchUpRate`, dispatching a
-sustained fast-wheel burst via CDP, and confirming it actually spikes
-toward the ceiling during the burst and decays once scrolling stops —
-removed that debug hook before committing (same pattern as the comet
-verification elsewhere in this file, use it again if you touch this).
+**displayedTime eases toward its target proportionally to the gap size**
+(`CATCHUP_RESPONSE` in the same `tick`) — not a fixed or velocity-based
+rate. Two earlier designs both got tried and rejected here, in order:
+1. A flat `MAX_RATE = 2.2` (video-seconds/sec cap). Windows Chrome's
+   default wheel-scroll step is a much bigger pixel jump per notch than
+   macOS's trackpad scrolling, and the whole page is wrapped in Lenis
+   (`layouts/scroll-layout.tsx`, `duration: 0.5`, `wheelMultiplier: 1.4`)
+   which just multiplies whatever raw delta the browser reports rather
+   than normalizing it — so a fast Windows/Chrome wheel-spin opened a
+   large gap between scroll position and video time, and the video kept
+   auto-advancing at the capped rate well after the user's hand had
+   stopped. Reported as "the video runs ahead of my scrolling."
+2. Estimating the user's *current* scroll velocity (EMA-smoothed,
+   bounded) and using that as the rate instead of a flat constant. This
+   is the wrong fix for the actual failure: the instant the user stops
+   scrolling, current velocity drops to ~0, and a velocity-derived rate
+   collapses right along with it — at exactly the moment a large backlog
+   (built up during the fast spin) most needs a *high* rate to close.
+   Measured directly with an in-page synthetic wheel-event trace (see
+   below): after an 8-notch/~500ms burst, the video was still several
+   seconds of footage behind and closing that gap at barely above the
+   rate floor for 3+ more seconds — the user kept seeing motion for
+   seconds after their hand had already stopped, which is what "va más
+   rápido" actually turned out to mean.
+
+The fix: `displayedTime += diff * (1 - Math.exp(-CATCHUP_RESPONSE * dt))`
+— proportional/exponential easing, where the step size scales with the
+*size of the remaining gap*, not with how fast the target is currently
+moving. A large backlog closes quickly (~95% within ~300ms at
+`CATCHUP_RESPONSE = 10`) precisely because it's large; a small, steady
+gap during ordinary continuous scrolling closes at a correspondingly
+small rate. No "how fast is the user scrolling right now" estimate
+needed at all — removed that tracking code entirely rather than layering
+a fix on top of it.
+
+Verified with an in-page trace, not CDP's `Input.dispatchMouseEvent`
+(its round-trip latency — ~130ms+/event — can't simulate a real fast
+wheel-spin; events end up seconds apart instead of tens of ms apart).
+Instead, inject a script via `Runtime.evaluate` that dispatches synthetic
+`WheelEvent`s directly in-page with short `setTimeout` gaps and logs
+`{t, scrollY, videoTime}` into a `window.__trace` array on every event,
+then read that array back afterward — this is the only way to get
+faithful sub-100ms timing for this kind of scroll-physics test. Compare
+old-vs-new by running the identical trace against each version: the old
+(velocity-based) design left `videoTime` still climbing 3.5s after the
+burst ended; the new one reaches its final value and holds flat within
+~1s. If you touch this again, verify the same way — a single before/after
+rate snapshot is *not* enough, it can land on a lull and look like the
+opposite of what's actually happening (this happened twice while building
+this fix).
 
 # Adaptive scaling grid — mobile tier holds a flat 16px
 

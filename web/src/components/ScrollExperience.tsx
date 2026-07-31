@@ -156,35 +156,35 @@ export default function ScrollExperience() {
     let raf = 0;
     let dirty = true;
 
-    // Scroll position is a target, not a direct time-map — without this,
-    // scrolling 2x faster made the video visibly play 2x faster (scroll
-    // speed *was* playback speed, 1:1). displayedTime instead eases toward
-    // whatever time the current scroll position implies, capped at a
-    // catch-up rate (video-seconds per real second) in either direction, so
-    // the video always reads as playing at roughly one constant pace rather
-    // than visibly speeding through the footage.
+    // Scroll position is a target, not a direct time-map. displayedTime
+    // eases toward whatever time the current scroll position implies rather
+    // than jump-cutting to it on every scroll event.
     //
-    // That rate isn't a fixed constant — it tracks the user's own recent
-    // scroll speed instead. A fixed cap (this used to be a flat 2.2) reads
-    // fine when real scroll throughput stays near that pace, but Windows
-    // Chrome's default wheel-scroll step is a much bigger pixel jump per
-    // notch than macOS's trackpad/momentum scrolling — the same physical
-    // scroll gesture covers the 372vh track in a couple of seconds instead
-    // of several, so a flat cap left a large, growing gap between "where the
-    // user's scroll position is" and "where the video is," which then kept
-    // auto-advancing at the capped rate well after the user's hand had
-    // already stopped — reading as the video running away from the actual
-    // scrolling instead of following it. Estimating the rate from actual
-    // scroll velocity (smoothed, and bounded so a single large jump can't
-    // make it feel instant) keeps the video's pace tied to how fast this
-    // user, on this input device, is actually scrolling.
-    const CATCHUP_RATE_DEFAULT = 2.2;
-    const CATCHUP_RATE_MIN = 1.4;
-    const CATCHUP_RATE_MAX = 8;
-    const VELOCITY_SMOOTHING = 0.35;
-    let catchUpRate = CATCHUP_RATE_DEFAULT;
-    let lastProgressVideoTime = 0;
-    let lastProgressAt = 0;
+    // This used to be a fixed-rate cap (video-seconds per real second),
+    // first a flat 2.2, then briefly an estimate of the user's *current*
+    // scroll velocity. Both had the same failure: Windows Chrome's default
+    // wheel-scroll step is a much bigger pixel jump per notch than macOS's
+    // trackpad scrolling, so a fast wheel-spin covers the 372vh track in a
+    // couple of seconds — and the instant that spin stops, current scroll
+    // velocity drops to ~0. A velocity-based rate collapses right along
+    // with it, at exactly the moment a large backlog (built up during the
+    // fast spin) most needs a *high* rate to close — measured this
+    // directly: after an 8-notch/~500ms burst, the video was still 6+
+    // seconds of footage behind and closing that gap at barely above the
+    // rate floor for 3+ more seconds, reading as the video ambling along on
+    // its own well after the user's hand had stopped. That's what "va más
+    // rápido" turned out to mean — not the video outrunning the scroll
+    // while scrolling, but continuing to visibly move for seconds after
+    // scrolling had already stopped.
+    //
+    // Proportional (exponential) easing fixes this by construction: the
+    // step size scales with the *size of the remaining gap*, not with how
+    // fast the target is currently moving. A large backlog closes quickly
+    // (most of it within a few hundred ms) precisely because it's large;
+    // a small, steady gap during ordinary continuous scrolling closes at a
+    // correspondingly small, steady rate. No separate "how fast is the user
+    // scrolling right now" estimate needed.
+    const CATCHUP_RESPONSE = 10; // higher = snappier catch-up, closes ~95% of any gap in ~300ms
     let displayedTime = 0;
     let targetProgress = 0;
     let lastTickAt = 0;
@@ -204,8 +204,7 @@ export default function ScrollExperience() {
       // the bug: once the user stopped scrolling, dirty went false and the
       // catch-up motion just stopped mid-frame, stranding the video well
       // short of wherever the scroll position said it should be (read as
-      // "you cut the video"). Scrolling through the whole track in under
-      // ~15s (34s / catchUpRate) made this the common case, not an edge case.
+      // "you cut the video").
       if (dirty) {
         const track = trackRef.current;
         if (track) {
@@ -213,22 +212,6 @@ export default function ScrollExperience() {
           const top = track.getBoundingClientRect().top;
           targetProgress = clamp(-top / totalScrollable, 0, 1);
           if (targetProgress > 0.02) setShowHint(false);
-
-          const video = videoRef.current;
-          const duration = video?.duration;
-          if (duration && Number.isFinite(duration)) {
-            const targetVideoTime = targetProgress * duration;
-            if (lastProgressAt) {
-              const elapsed = (now - lastProgressAt) / 1000;
-              if (elapsed > 0) {
-                const instantRate = Math.abs(targetVideoTime - lastProgressVideoTime) / elapsed;
-                const bounded = clamp(instantRate, CATCHUP_RATE_MIN, CATCHUP_RATE_MAX);
-                catchUpRate += (bounded - catchUpRate) * VELOCITY_SMOOTHING;
-              }
-            }
-            lastProgressVideoTime = targetVideoTime;
-            lastProgressAt = now;
-          }
         }
         dirty = false;
       }
@@ -236,10 +219,9 @@ export default function ScrollExperience() {
       const video = videoRef.current;
       if (video && video.duration && Number.isFinite(video.duration)) {
         const targetTime = targetProgress * video.duration;
-        if (Math.abs(targetTime - displayedTime) > 0.001 && !video.seeking) {
-          const maxStep = catchUpRate * dt;
-          const diff = targetTime - displayedTime;
-          displayedTime += Math.max(-maxStep, Math.min(maxStep, diff));
+        const diff = targetTime - displayedTime;
+        if (Math.abs(diff) > 0.001 && !video.seeking) {
+          displayedTime += diff * (1 - Math.exp(-CATCHUP_RESPONSE * dt));
           video.currentTime = displayedTime;
         }
       }
