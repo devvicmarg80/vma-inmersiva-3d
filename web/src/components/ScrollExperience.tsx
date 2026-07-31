@@ -54,6 +54,9 @@ export default function ScrollExperience() {
   // are populated by each act `<div ref>` below; initial inline styles
   // cover the first paint before the tick loop's first frame runs.
   const actRefs = useRef<(HTMLDivElement | null)[]>([]);
+  // Shared between the blob-fetch effect and the tick effect below — see the
+  // tick loop's targetTime clamp for why the tick loop needs to know this.
+  const blobReadyRef = useRef(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [ready, setReady] = useState(false);
   const [pointerFine, setPointerFine] = useState(false);
@@ -125,6 +128,12 @@ export default function ScrollExperience() {
         const onLoaded = () => {
           video.currentTime = resumeAt;
           video.removeEventListener("loadedmetadata", onLoaded);
+          // Only now — once the blob is actually the active source and has
+          // loaded — can the tick loop stop clamping seeks to the buffered
+          // range. Setting this before `onLoaded` fires would let it seek
+          // freely against a video element that hasn't finished swapping
+          // sources yet.
+          blobReadyRef.current = true;
         };
         video.addEventListener("loadedmetadata", onLoaded);
         video.src = objectUrl;
@@ -218,7 +227,35 @@ export default function ScrollExperience() {
 
       const video = videoRef.current;
       if (video && video.duration && Number.isFinite(video.duration)) {
-        const targetTime = targetProgress * video.duration;
+        let targetTime = targetProgress * video.duration;
+
+        // Before the background blob fetch finishes (see the effect above),
+        // this is still the native <video preload="auto">, which streams
+        // progressively — seeking past whatever byte range it's actually
+        // downloaded so far blocks on the network until that range arrives.
+        // Measured directly on a real connection via the ?scrolldebug=1
+        // overlay: a 4.6s continuous `video.seeking` stall, reported as
+        // "se queda pegado por segundos" / "se devuelve" (the sudden
+        // multi-second catch-up once a stalled seek finally resolves reads
+        // as a jump, easy to mistake for going backward). Clamping the
+        // requested seek to what's actually buffered — instead of firing a
+        // seek that will block — turns that into "keeps up with whatever's
+        // downloaded so far, catches up smoothly as more arrives" rather
+        // than a hard freeze. Once the blob swap completes this is skipped
+        // entirely and seeking is unclamped, matching the original design.
+        if (!blobReadyRef.current) {
+          const buffered = video.buffered;
+          let bufferedEnd = 0;
+          for (let i = 0; i < buffered.length; i++) {
+            if (buffered.start(i) <= displayedTime && displayedTime <= buffered.end(i)) {
+              bufferedEnd = buffered.end(i);
+              break;
+            }
+          }
+          const SEEK_SAFETY_MARGIN = 1.5; // stay this far behind the buffered edge
+          targetTime = Math.min(targetTime, Math.max(displayedTime, bufferedEnd - SEEK_SAFETY_MARGIN));
+        }
+
         const diff = targetTime - displayedTime;
         if (Math.abs(diff) > 0.001 && !video.seeking) {
           displayedTime += diff * (1 - Math.exp(-CATCHUP_RESPONSE * dt));

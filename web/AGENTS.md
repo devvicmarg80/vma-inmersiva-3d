@@ -226,6 +226,66 @@ fixes, and this file's *first* fix attempt (the velocity-based `tick`
 redesign) was built on an assumption never actually confirmed against
 what the user was seeing.
 
+**`WHEEL_DELTA_CAP` was tuned down from 48 to 24, from real telemetry, not
+a second guess.** Once `?scrolldebug=1` (see `ScrollDebugOverlay.tsx`)
+could show the user's own numbers, they showed the 48px cap *was*
+engaging correctly (consistent ~48px scrollY steps) — it just still let
+one deliberate, well-spaced wheel click (180ms-2s apart, clearly not a
+fast spin) move 0.3-0.9s of the 34s video. Halved to 24px on that
+evidence. If this needs retuning again, get fresh `?scrolldebug=1` data
+first rather than picking a new number by feel — the whole point of that
+overlay is that "feels right" here has repeatedly not matched what the
+numbers showed.
+
+**Seeking can still stall for real — clamped to the buffered range, not
+timing-tuned away.** After the wheel-delta fix, next reports were "freezes
+for seconds while scrolling" and "doesn't stop where I left it / jumps
+back." Confirmed directly via `?scrolldebug=1`'s continuous poll (not
+wheel-triggered — this can happen with no new input, so it needed its own
+poll loop): a **4.6-second continuous `video.seeking` stall** on a real
+connection. Root cause was already half-documented in this file's own
+`useEffect` comment above the blob-fetch effect: before that background
+`fetch()` finishes swapping the `<video>` to a local blob, it's still the
+native `preload="auto"` element streaming progressively, and a seek past
+whatever byte range it's actually downloaded blocks on the network —
+easy to trigger by scrolling fast in the first several seconds after
+page load, before a ~14MB fetch has had time to finish on a real (non-
+localhost) connection. Once a stalled seek finally resolves, the target
+may have moved a lot in the meantime, which is what read as "jumps back."
+Fixed in the tick loop: while `blobReadyRef.current` is still `false`,
+`targetTime` is clamped to `video.buffered`'s end (minus a 1.5s safety
+margin) instead of the raw scroll-implied value — so it never *requests*
+a seek past what's actually downloaded, and just holds/advances smoothly
+with the buffer instead of firing a seek that will block. Verified with
+`Network.emulateNetworkConditions` (~1.5 Mbps, throttled *before*
+navigating so the blob fetch has no chance to finish) plus an immediate
+`window.scrollTo` to ~96% progress: `currentTime` correctly held at 0 for
+~5s while `buffered` end crept up, then began advancing smoothly the
+moment buffered end passed the safety margin — `seeking` never stayed
+`true` for more than one ~150ms poll tick. Once `blobReadyRef.current`
+flips to `true` (blob swap's `loadedmetadata` fired), this clamp is
+skipped entirely and seeking is unclamped, matching the pre-existing
+design for the common case where the fetch wins the race.
+
+`ScrollDebugOverlay.tsx` (mounted in `layout.tsx`, gated behind
+`?scrolldebug=1`) is the tool that made all three of the diagnoses above
+possible — remove it (and its mount) once this whole investigation is
+closed out and confirmed fixed on the user's own machine, not before. It
+exists because asking a non-developer to paste a script into DevTools
+console hit Chrome's "type allow pasting to continue" wall and silently
+produced nothing; an on-page overlay needs no console at all. If a future
+scroll/video-timing report needs the same kind of real-device telemetry,
+extend this file rather than starting over — it already knows how to
+avoid `elementFromPoint`-vs-`pointer-events:none` confusion (don't use
+`elementFromPoint` to verify a `pointer-events:none` overlay is visually
+on top — hit-testing skips it by design; check `getComputedStyle` /
+`getBoundingClientRect` instead), and the general lesson under all of
+this: prefer a live measurement on the reporting user's own machine over
+another synthetic CDP reproduction once a first synthetic-only fix has
+already failed to resolve a report — this session needed three real
+telemetry captures to actually nail down two genuinely different root
+causes that a synthetic macOS/localhost repro could not have surfaced.
+
 # Adaptive scaling grid — mobile tier holds a flat 16px
 
 `src/app/globals.css`'s `html { font-size }` media-query ladder (see
