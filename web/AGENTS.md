@@ -316,6 +316,36 @@ across it. Confirmed via live `getBoundingClientRect()` measurements
 If a future act's content ever gets this tall again on mobile, re-check
 the same way rather than assuming centering alone is safe.
 
+# public/video/VMA_Narrative.mp4 — H.264 Main profile, not committed to git
+
+The Hero video is gitignored (`web/public/video/**/*.mp4`) — it's deployed
+by `scp`ing straight to the VPS, never via `git pull`, so a change to this
+file needs its own manual deploy step, not just a commit+push.
+
+Re-encoded from High to **Main** H.264 profile (same 1280x720/24fps,
+same ~3.4Mbps, same 6-frame/0.25s keyframe interval — `ffmpeg -profile:v
+main -level 3.1 -g 6 -keyint_min 6 -sc_threshold 0`) after the buffered-
+range clamp (see the ScrollExperience section above) still left real,
+user-measured multi-second `video.seeking` stalls — but this time
+confirmed via `?scrolldebug=1`'s v4 event log that *every single one* of
+10 logged stalls (397ms-4.4s) happened with `blob=SÍ`, i.e. on a fully
+downloaded local blob with `readyState=4`. That ruled out network/
+buffering as the cause entirely — it pointed at decode cost on that
+user's specific hardware. Directly re-verified keyframe density first
+(`ffprobe -show_entries frame=pict_type`, counted I-frames at positions
+1,7,13,19...) rather than assuming it — confirmed already dense, so
+sparse keyframes forcing long forward-decode-from-keyframe on backward
+seeks wasn't the cause either. High profile's extra decode complexity
+(8x8 transforms, more reference-frame options) over Main was the
+remaining lever available purely in software, without reducing
+resolution/bitrate (asked the user first — re-encoding at lower quality
+is a visual tradeoff, not a pure bug fix, so it wasn't done silently).
+Visually verified frame-for-frame against the original (identical, no
+perceptible difference) before replacing. If this *doesn't* resolve the
+remaining stalls, the next lever is lower resolution/bitrate, which the
+user has already been asked about and can authorize — don't silently
+degrade video quality without asking again if that becomes necessary.
+
 # HeroStarfield
 
 `components/HeroStarfield.tsx`, mounted in `ScrollExperience.tsx` right
