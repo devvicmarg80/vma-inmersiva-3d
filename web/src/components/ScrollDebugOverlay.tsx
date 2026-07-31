@@ -37,23 +37,42 @@ import { useEffect, useRef, useState } from "react";
  * (`currentSrc` starting with `blob:` vs the original path),
  * `readyState`, and — the direct measurement — how many consecutive ms
  * `video.seeking` has been `true` right now.
+ *
+ * v4: ScrollExperience.tsx now clamps seeking to the buffered range while
+ * the blob swap is still pending (built directly from v3's data — a real
+ * 4.6s stall). A follow-up capture still showed a 2.4s `stallMáximo`,
+ * roughly half — real improvement, but not proof the remaining stall is
+ * even in the code path that fix touches. The running max alone can't
+ * say *when* it happened relative to the blob swap completing, and the
+ * fix only clamps seeking *before* that swap — a stall occurring after
+ * would mean this is a different bug entirely. This version logs each
+ * stall ≥300ms as its own timestamped event line (seconds since page
+ * load, so it lines up against the "blob listo" event below), and logs
+ * the moment the blob swap itself completes as an event too, so the two
+ * can be read against each other directly instead of inferred.
  */
 type Sample = { t: number; videoTime: number };
 
 export default function ScrollDebugOverlay() {
   const [enabled, setEnabled] = useState(false);
   const [lines, setLines] = useState<string[]>([]);
+  const [events, setEvents] = useState<string[]>([]);
   const [rate, setRate] = useState<string>("—");
   const [status, setStatus] = useState<string>("—");
   const lastEventAt = useRef<number | null>(null);
   const history = useRef<Sample[]>([]);
   const seekingSinceRef = useRef<number | null>(null);
   const maxSeekStallRef = useRef(0);
+  const pageLoadAtRef = useRef(0);
+  const loggedBlobReadyRef = useRef(false);
 
   useEffect(() => {
     const on = new URLSearchParams(window.location.search).get("scrolldebug") === "1";
     setEnabled(on);
     if (!on) return;
+    pageLoadAtRef.current = performance.now();
+
+    const secsSinceLoad = (t: number) => ((t - pageLoadAtRef.current) / 1000).toFixed(1) + "s";
 
     const onWheel = (e: WheelEvent) => {
       const now = performance.now();
@@ -82,14 +101,28 @@ export default function ScrollDebugOverlay() {
       const video = document.querySelector("video");
       if (!video) return;
       const now = performance.now();
+      const usingBlob = video.currentSrc.startsWith("blob:");
+
+      if (usingBlob && !loggedBlobReadyRef.current) {
+        loggedBlobReadyRef.current = true;
+        setEvents((prev) => [`[${secsSinceLoad(now)}] blob listo (swap a video local completado)`, ...prev].slice(0, 10));
+      }
+
       if (video.seeking) {
         if (seekingSinceRef.current === null) seekingSinceRef.current = now;
-        const stall = now - seekingSinceRef.current;
-        if (stall > maxSeekStallRef.current) maxSeekStallRef.current = stall;
       } else {
+        if (seekingSinceRef.current !== null) {
+          const stall = now - seekingSinceRef.current;
+          if (stall > maxSeekStallRef.current) maxSeekStallRef.current = stall;
+          if (stall >= 300) {
+            setEvents((prev) => [
+              `[${secsSinceLoad(now)}] STALL de ${stall.toFixed(0)}ms resuelto — blob=${usingBlob ? "SÍ" : "NO"} en ese momento`,
+              ...prev,
+            ].slice(0, 10));
+          }
+        }
         seekingSinceRef.current = null;
       }
-      const usingBlob = video.currentSrc.startsWith("blob:");
       let bufferedAhead = "—";
       try {
         for (let i = 0; i < video.buffered.length; i++) {
@@ -132,8 +165,16 @@ export default function ScrollDebugOverlay() {
         pointerEvents: "none",
       }}
     >
-      <div style={{ color: "#fff", marginBottom: 4 }}>Scroll debug v3</div>
+      <div style={{ color: "#fff", marginBottom: 4 }}>Scroll debug v4</div>
       <div style={{ color: "#ff0", marginBottom: 6 }}>{status}</div>
+      {events.length > 0 && (
+        <div style={{ marginBottom: 6 }}>
+          <div style={{ color: "#fff" }}>Eventos (stalls / blob listo):</div>
+          {events.map((e, i) => (
+            <div key={i} style={{ color: "#f80" }}>{e}</div>
+          ))}
+        </div>
+      )}
       <div style={{ color: "#0ff", marginBottom: 6 }}>Tasa: {rate}</div>
       {lines.length === 0 && <div>Haz scroll para ver datos…</div>}
       {lines.map((l, i) => (
