@@ -67,9 +67,16 @@ function ScrollController() {
       // scrolling (trackpad flicks, sustained wheel spins) feels — those
       // still accumulate normally across events, only an individual
       // oversized single event gets capped.
+      // Real telemetry from a user's own machine (captured via the
+      // ?scrolldebug=1 overlay — see ScrollDebugOverlay.tsx) showed the cap
+      // itself was engaging correctly (consistent ~48px steps regardless of
+      // native deltaY) but 48px was still too generous — even deliberate,
+      // well-spaced individual wheel clicks (180ms-2s apart, clearly not a
+      // continuous fast spin) each moved ~0.3-0.9s of the 34s video. Halved
+      // to 24px based on that data.
       virtualScroll: (data) => {
         if (data.event instanceof WheelEvent) {
-          const WHEEL_DELTA_CAP = 48;
+          const WHEEL_DELTA_CAP = 24;
           data.deltaX = Math.sign(data.deltaX) * Math.min(Math.abs(data.deltaX), WHEEL_DELTA_CAP);
           data.deltaY = Math.sign(data.deltaY) * Math.min(Math.abs(data.deltaY), WHEEL_DELTA_CAP);
         }
