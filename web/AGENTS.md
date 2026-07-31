@@ -29,6 +29,30 @@ Re-running it with a fresher export is safe (upserts by email).
 `web/data/app.db` holds real user data — gitignored (`/data/` in
 `web/.gitignore`), never commit it or anything derived from it.
 
+# Contact form ("Hablemos") + /portal/mensajes admin inbox
+
+`POST /api/contact` always inserts into `contact_messages` (name, email,
+interest, message, created_at) — that's the durable path, confirmed
+end-to-end (submitted via the real route, verified the row in
+`data/app.db`). Forwarding to `CONTACT_ENDPOINT` (still unconfigured — see
+the note in the route) is optional and additive on top of that, not a
+replacement — if it's ever set and the forward fails, the message still
+isn't lost.
+
+`/portal/mensajes` lists them, gated by `isAdminEmail()`
+(`src/lib/auth/admin.ts`) against the `ADMIN_EMAILS` env var (comma-separated,
+empty by default — nobody can see it until it's set on the VPS). This is
+deliberately an env var, not a `role` column on `accounts`: `approved_users`
+is seeded from VMA's *external* registration sheet (investors/allies), so
+"has an activated account" and "is VMA staff" are different populations —
+a DB role would need real role-management UI nobody asked for, and every
+approved user must NOT see every other lead's contact info by default.
+Confirmed via real session cookies (one admin, one non-admin) that a
+non-admin session gets redirected straight back to `/portal` without ever
+rendering the list. `/portal/page.tsx` only shows the "Ver mensajes de
+contacto" link when `isAdminEmail(email)` — a non-admin isn't shown a link
+to a page they can't use.
+
 # Pricing page (/precios) + Wompi
 
 `content/pricing.ts` has the 3 services (capacitación, alianzas

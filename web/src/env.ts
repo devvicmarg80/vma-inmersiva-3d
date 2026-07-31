@@ -30,6 +30,16 @@ const optionalUrl = () =>
 const serverSchema = z.object({
   /** Optional upstream the contact endpoint forwards leads to (CRM / webhook). */
   CONTACT_ENDPOINT: optionalUrl(),
+  /** Comma-separated emails allowed to see /portal's contact-message inbox.
+   * No admin *role* in the DB by design — `approved_users` is seeded from
+   * VMA's external registration sheet (investors/allies), not a staff
+   * directory, so "is an approved user" and "is VMA staff" are different
+   * things. This env var is the simplest thing that keeps other approved
+   * users' leads private without a role-management UI nobody asked for. */
+  ADMIN_EMAILS: z.preprocess(
+    (v) => (v === "" || v === undefined ? [] : String(v).split(",").map((e) => e.trim().toLowerCase()).filter(Boolean)),
+    z.array(z.string()),
+  ),
 });
 
 let cachedServerEnv: z.infer<typeof serverSchema> | undefined;
@@ -41,6 +51,7 @@ let cachedServerEnv: z.infer<typeof serverSchema> | undefined;
 export function getServerEnv() {
   cachedServerEnv ??= serverSchema.parse({
     CONTACT_ENDPOINT: process.env.CONTACT_ENDPOINT,
+    ADMIN_EMAILS: process.env.ADMIN_EMAILS,
   });
   return cachedServerEnv;
 }

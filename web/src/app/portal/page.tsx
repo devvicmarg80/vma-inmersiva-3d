@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { SiteFooter } from "@/components/sections/SiteFooter";
 import { requireSession } from "@/lib/auth/session";
+import { isAdminEmail } from "@/lib/auth/admin";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 
 // Login-gated — nothing here should show up in search results.
@@ -11,6 +13,7 @@ export const metadata: Metadata = {
 
 export default async function PortalPage() {
   const { email } = await requireSession();
+  const isAdmin = isAdminEmail(email);
 
   return (
     <main className="flex min-h-dvh flex-col bg-[var(--ink)] pt-28">
@@ -25,7 +28,16 @@ export default async function PortalPage() {
           Sesión iniciada como <span className="text-white">{email}</span>.
           El contenido de esta sección se irá completando próximamente.
         </p>
-        <div className="mt-8">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          {isAdmin && (
+            <Link
+              href="/portal/mensajes"
+              className="rounded-full px-5 py-2 text-sm font-semibold text-white transition-opacity duration-[var(--duration-fast)] ease-entrance hover:opacity-90"
+              style={{ background: "var(--gradient-cta)" }}
+            >
+              Ver mensajes de contacto
+            </Link>
+          )}
           <LogoutButton />
         </div>
       </section>
