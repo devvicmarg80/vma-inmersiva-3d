@@ -140,6 +140,28 @@ own). If a future feature wants to add more per-frame visual state here,
 extend this same direct-DOM pattern rather than reintroducing setState in
 the hot path.
 
+**Catch-up rate is adaptive, not a fixed constant** (`catchUpRate` in the
+same `tick`). It used to be a flat `MAX_RATE = 2.2` (video-seconds/sec cap
+on how fast `displayedTime` eases toward the scroll-implied target) — fine
+when real scroll throughput stays near that pace, but Windows Chrome's
+default wheel-scroll step is a much bigger pixel jump per notch than
+macOS's trackpad scrolling, and the whole page is wrapped in Lenis
+(`layouts/scroll-layout.tsx`, `duration: 0.5`, `wheelMultiplier: 1.4`) —
+Lenis just multiplies whatever raw delta the browser reports, so a bigger
+native delta still produces a bigger real scroll velocity through it, not
+a normalized one. The fixed cap left a large, growing gap on fast
+Windows/Chrome scrolling, and the video kept auto-advancing at the capped
+rate well after the user's hand had stopped — reported as "the video runs
+ahead of my scrolling." Fixed by estimating actual scroll velocity
+(video-seconds implied per real second, each time the `dirty`-gated
+recompute runs) and EMA-smoothing it into `catchUpRate`, bounded to
+[1.4, 8] so a single large event can't make it feel instant. Verified by
+temporarily exposing it as `window.__debugCatchUpRate`, dispatching a
+sustained fast-wheel burst via CDP, and confirming it actually spikes
+toward the ceiling during the burst and decays once scrolling stops —
+removed that debug hook before committing (same pattern as the comet
+verification elsewhere in this file, use it again if you touch this).
+
 # Adaptive scaling grid — mobile tier holds a flat 16px
 
 `src/app/globals.css`'s `html { font-size }` media-query ladder (see
