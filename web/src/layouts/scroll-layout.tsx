@@ -47,10 +47,34 @@ function ScrollController() {
       // is boosted too — the actual dominant fix for "takes too long" was
       // shrinking the video track's scroll distance (see VH_PER_ACT in
       // ScrollExperience.tsx); this compounds with that rather than
-      // replacing it.
+      // replacing it. See the virtualScroll comment below for why that
+      // boost needed a per-event cap to go with it.
       duration: 0.5,
       wheelMultiplier: 1.4,
       // syncTouch: true,
+      // Cap how much a single wheel event can move (after wheelMultiplier is
+      // already applied, per Lenis's own onWheel — see node_modules/lenis
+      // source, not just its .d.ts). Chrome on Windows commonly reports a
+      // much bigger deltaY per wheel "notch" than macOS's trackpad does for
+      // the equivalent physical nudge — combined with wheelMultiplier this
+      // let one Windows/Chrome notch move noticeably more scroll (and, on
+      // the video-scrubbed Hero, noticeably more of the video) than the same
+      // gesture on Mac. Confirmed by asking specifically what "faster"
+      // meant: not lag/desync (already tried fixing that twice — see
+      // ScrollExperience.tsx's history), but "a small scroll moves the
+      // video a lot." Clamping the per-event delta bounds that regardless
+      // of OS/browser, without touching how continuous multi-event
+      // scrolling (trackpad flicks, sustained wheel spins) feels — those
+      // still accumulate normally across events, only an individual
+      // oversized single event gets capped.
+      virtualScroll: (data) => {
+        if (data.event instanceof WheelEvent) {
+          const WHEEL_DELTA_CAP = 48;
+          data.deltaX = Math.sign(data.deltaX) * Math.min(Math.abs(data.deltaX), WHEEL_DELTA_CAP);
+          data.deltaY = Math.sign(data.deltaY) * Math.min(Math.abs(data.deltaY), WHEEL_DELTA_CAP);
+        }
+        return true;
+      },
     });
     (window as typeof window & { lenis: Lenis }).lenis = lenis;
     setLenis(lenis);

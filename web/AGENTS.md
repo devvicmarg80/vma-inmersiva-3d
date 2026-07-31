@@ -191,6 +191,41 @@ rate snapshot is *not* enough, it can land on a lull and look like the
 opposite of what's actually happening (this happened twice while building
 this fix).
 
+**None of the above was actually the "Windows/Chrome goes faster" bug.**
+Both `tick`-loop redesigns above target *lag* — the video visibly still
+moving after the user's hand stopped. Shipped both, user said it still
+wasn't fixed. Asked one precise follow-up (what exactly looks wrong) and
+the real answer was different: a *small* physical scroll moves the video
+*a lot* — a distance/pacing problem, not a timing one, so no amount of
+tuning `tick`'s catch-up math could have fixed it. The actual cause is in
+`layouts/scroll-layout.tsx`'s Lenis config: `wheelMultiplier: 1.4`
+amplifies whatever `deltaY` the browser reports for a wheel event, and
+Chrome on Windows commonly reports a much bigger native `deltaY` per
+wheel "notch" than macOS's trackpad does for an equivalent nudge — so the
+same physical gesture produces very different scroll distances (and,
+through it, very different amounts of video-time) depending on
+OS/browser. Fixed via Lenis's `virtualScroll` hook (confirmed by reading
+`node_modules/lenis/dist/lenis.mjs`, not just the `.d.ts` — the hook can
+mutate `data.deltaY`/`data.deltaX` in place before Lenis's `onWheel`
+destructures them, per `onVirtualScroll`'s source), capping the
+*post-multiplier* delta from any single wheel event to `WHEEL_DELTA_CAP`
+(48px), guarded to `WheelEvent` only so touch/trackpad-momentum scrolling
+is untouched. Verified with a single synthetic 150px `WheelEvent`
+(bigger than a typical Windows notch): before the cap it produced
+`scrollY = 210` (150 × 1.4, unclamped); after, `scrollY = 48`. A sustained
+20-notch spin still accumulated to a proportionate `scrollY = 959` —
+continuous scrolling isn't hobbled, only a single oversized event is
+bounded.
+
+The lesson, if this comes up again: when a report says "X but for a
+different browser/OS than mine," don't assume it's the same class of bug
+you already understand just because it's the same feature. Get the exact
+symptom before re-deriving a fix — "runs ahead after I stop" and "barely
+moved my scroll and it jumped a lot" are different bugs with different
+fixes, and this file's *first* fix attempt (the velocity-based `tick`
+redesign) was built on an assumption never actually confirmed against
+what the user was seeing.
+
 # Adaptive scaling grid — mobile tier holds a flat 16px
 
 `src/app/globals.css`'s `html { font-size }` media-query ladder (see
